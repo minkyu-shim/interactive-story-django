@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NAHB - Story List</title>
+</head>
+<body>
+    <h1>Available Stories</h1>
+    <ul>
+        {% for story in stories %}
+            <li>
+                <strong>{{ story.title }}</strong><br>
+                {{ story.description }}<br>
+                <a href="#">Play this story</a>
+            </li>
+        {% empty %}
+            <li>No stories found. Make sure your Flask API is running and seeded!</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
