@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Playing Story</title>
+</head>
+<body>
+    <div class="story-container">
+        <p class="story-text">{{ page.text }}</p>
+
+        <hr>
+
+        {% if page.is_ending %}
+            <div class="ending-screen">
+                <h2>THE END</h2>
+                {% if page.ending_label %}
+                    <h3>Result: {{ page.ending_label }}</h3>
+                {% endif %}
+
+                <a href="{% url 'story_list' %}">Back to Story List</a>
+            </div>
+        {% else %}
+            <div class="choices">
+                <h3>What do you want to do?</h3>
+                <ul>
+                    {% for choice in page.choices %}
+                        <li>
+                            <a href="{% url 'play_page' choice.next_page_id %}">
+                                {{ choice.text }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

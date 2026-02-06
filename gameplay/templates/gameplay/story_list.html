@@ -10,7 +10,7 @@
             <li>
                 <strong>{{ story.title }}</strong><br>
                 {{ story.description }}<br>
-                <a href="#">Play this story</a>
+                <a href="{% url 'start_story' story.id %}">Play this story</a>
             </li>
         {% empty %}
             <li>No stories found. Make sure your Flask API is running and seeded!</li>
