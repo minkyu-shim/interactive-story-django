@@ -2,13 +2,101 @@
 <html>
 <head>
     <title>Global Statistics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.7;
+            color: #3f3e53;
+            background-color: #f7f7f9; /* Consistent soft background */
+            margin: 0;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: #5d5c7c;
+            margin-bottom: 25px;
+            font-size: 2.8em;
+            letter-spacing: 0.05em;
+        }
+        h2 {
+            font-family: 'Noto Sans KR', sans-serif; /* Consistent font */
+            color: #6a68a6; /* Softer heading color */
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        p {
+            font-size: 1.1em;
+            color: #4a4a60; /* Consistent text color */
+        }
+        table {
+            width: 90%; /* Wider table for better presentation */
+            border-collapse: separate; /* Use separate for rounded corners on cells */
+            border-spacing: 0; /* Remove space between cells */
+            margin-top: 30px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            background-color: rgba(255, 255, 255, 0.95); /* Slightly translucent */
+            border-radius: 15px;
+            overflow: hidden; /* Ensures rounded corners apply to children */
+            border: 1px solid #e0e0e0;
+        }
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #e8e8e8; /* Softer border */
+        }
+        th {
+            background: linear-gradient(45deg, #a7bfe8, #619af3); /* Consistent gradient for headers */
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.95em;
+            letter-spacing: 0.03em;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #fcfcfc; /* Softer alternating row color */
+        }
+        tbody tr:hover {
+            background-color: #f0f4f7; /* Softer hover color */
+            cursor: pointer;
+        }
+        tbody tr:last-child td {
+            border-bottom: none; /* No border on the last row */
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 14px 30px;
+            background: linear-gradient(45deg, #a7bfe8, #619af3); /* Consistent button gradient */
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .back-link:hover {
+            background: linear-gradient(45deg, #619af3, #a7bfe8);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+    </style>
 </head>
 <body>
     <h1>Server Statistics</h1>
     <p>Total Stories Played: <strong>{{ total_plays }}</strong></p>
 
     <h2>Ending Breakdown</h2>
-    <table border="1">
+    <table>
         <thead>
             <tr>
                 <th>Ending Name (ID)</th>
@@ -29,6 +117,6 @@
         </tbody>
     </table>
     <br>
-    <a href="{% url 'story_list' %}">Back to Games</a>
+    <a href="{% url 'story_list' %}" class="back-link">Back to Games</a>
 </body>
 </html>

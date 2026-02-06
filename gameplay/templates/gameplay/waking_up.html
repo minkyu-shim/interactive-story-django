@@ -4,20 +4,90 @@
     <title>Waking Up...</title>
     <meta http-equiv="refresh" content="10">
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .loader { font-size: 50px; }
-        .message { color: #666; margin-top: 20px; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            text-align: center;
+            background-color: #f7f7f9; /* Consistent soft background */
+            color: #3f3e53;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* Center content vertically */
+            min-height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
+            padding: 30px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95); /* Slightly translucent white */
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            padding: 50px;
+            max-width: 550px;
+            width: 100%;
+            border: 1px solid #e0e0e0; /* Subtle border */
+        }
+        .loader {
+            font-size: 80px;
+            margin-bottom: 35px;
+            animation: pulse 1.8s infinite ease-in-out; /* Slightly slower pulse */
+            color: #6a8bb5; /* Softer loader color */
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: #5d5c7c;
+            margin-bottom: 25px;
+            font-size: 2.8em;
+            letter-spacing: 0.05em;
+        }
+        .message {
+            color: #4a4a60; /* Consistent text color */
+            margin-top: 20px;
+            font-size: 1.1em;
+            line-height: 1.8;
+        }
+        .message strong {
+            color: #9bc5e0; /* Softer strong color */
+        }
+        .btn {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 14px 30px;
+            background: linear-gradient(45deg, #a7bfe8, #619af3); /* Consistent button gradient */
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .btn:hover {
+            background: linear-gradient(45deg, #619af3, #a7bfe8);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 <body>
-    <div class="loader">☕</div>
-    <h1>Server is Waking Up</h1>
-    <div class="message">
-        <p>Our free cloud servers are booting up from sleep mode.</p>
-        <p>This typically takes <strong>30-60 seconds</strong>.</p>
-        <p>This page will refresh automatically...</p>
+    <div class="container">
+        <div class="loader">☕</div>
+        <h1>Server is Waking Up</h1>
+        <div class="message">
+            <p>Our free cloud servers are booting up from sleep mode.</p>
+            <p>This typically takes <strong>30-60 seconds</strong>.</p>
+            <p>This page will refresh automatically...</p>
+        </div>
+        <br>
+        <a href="{% url 'story_list' %}" class="btn">Try Now</a>
     </div>
-    <br>
-    <a href="{% url 'story_list' %}"><button>Try Now</button></a>
 </body>
 </html>

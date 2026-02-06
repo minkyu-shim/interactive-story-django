@@ -3,12 +3,136 @@
 <head>
     <title>Playing Story</title>
     <style>
-        .story-container { max-width: 800px; margin: 0 auto; padding: 20px; font-family: sans-serif; }
-        .dialogue-box { background: #f9f9f9; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 15px; }
-        .ending-box { border: 2px solid #28a745; background-color: #e8f5e9; padding: 30px; text-align: center; border-radius: 10px; }
-        .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;}
-        .choice-btn { display: block; background: #eee; color: #333; margin: 10px 0; width: 100%; text-align: left; }
-        .choice-btn:hover { background: #ddd; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.7;
+            color: #3f3e53; /* Darker, soft text color */
+            background-color: #f7f7f9; /* Very light, almost white background */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+        .story-container {
+            background: rgba(255, 255, 255, 0.95); /* Slightly translucent white */
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            max-width: 850px;
+            width: 100%;
+            padding: 40px;
+            box-sizing: border-box;
+            border: 1px solid #e0e0e0; /* Subtle border */
+        }
+        h2 {
+            font-family: 'Playfair Display', serif;
+            color: #5d5c7c; /* Elegant header color */
+            text-align: center;
+            margin-bottom: 35px;
+            font-size: 2.4em;
+            letter-spacing: 0.05em;
+        }
+        .dialogue-box, .story-text {
+            background: linear-gradient(135deg, rgba(250, 250, 250, 0.8), rgba(245, 245, 245, 0.8)); /* Soft gradient background */
+            border: 1px solid #e8e8e8; /* Subtle border */
+            padding: 20px 25px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            font-size: 1.15em;
+            color: #4a4a60;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03); /* Very light shadow */
+        }
+        .dialogue-box strong {
+            color: #6a68a6; /* Softer color for speaker names */
+            font-weight: 700;
+        }
+        .ending-box {
+            border: 2px dashed #9bc5e0; /* Softer, dashed border */
+            background-color: #eef7fc; /* Light blueish background */
+            padding: 50px;
+            text-align: center;
+            border-radius: 15px;
+            margin-top: 40px;
+        }
+        .ending-box h1 {
+            font-family: 'Playfair Display', serif;
+            color: #6a8bb5; /* Elegant blue for ending title */
+            font-size: 3.5em;
+            margin-bottom: 25px;
+        }
+        .ending-text p {
+            font-size: 1.2em;
+            color: #5e5e7a;
+            margin-bottom: 15px;
+        }
+        .ending-outcome {
+            color: #7b9ccf;
+            font-weight: 700;
+            font-size: 1.15em;
+            margin-top: 15px;
+            margin-bottom: 35px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 14px 30px;
+            background: linear-gradient(45deg, #a7bfe8, #619af3); /* Gradient for buttons */
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .btn:hover {
+            background: linear-gradient(45deg, #619af3, #a7bfe8);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        .choice-btn {
+            display: block;
+            background: #f0f4f7; /* Light background for choices */
+            color: #4a4a60;
+            margin: 12px 0;
+            width: 100%;
+            text-align: left;
+            padding: 18px 25px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            border: 1px solid #e0e6eb;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .choice-btn:hover {
+            background: #e6edf2;
+            border-color: #d0d7dd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .choice-effect {
+            font-size: 0.9em;
+            color: #7a7a90;
+            margin-left: 10px;
+            font-style: italic;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #e9e9ee; /* Thicker, softer divider */
+            margin: 40px 0;
+        }
+        .choices h3 {
+            color: #5d5c7c;
+            margin-bottom: 25px;
+            font-size: 1.5em;
+        }
     </style>
 </head>
 <body>
@@ -20,29 +144,43 @@
 
             <div class="ending-box">
                 <h1>THE END</h1>
-                <p style="font-size: 1.2em;">{{ node.text }}</p>
 
-                <br>
+                <div class="ending-text">
+                    {% for line in node.content %}
+                        <p>{{ line.text }}</p>
+                    {% empty %}
+                        <p>{{ node.text }}</p>
+                    {% endfor %}
+                </div>
+
+                {% if node.outcome %}
+                    <div class="ending-outcome">Result: {{ node.outcome }}</div>
+                {% endif %}
+
                 <a href="{% url 'story_list' %}" class="btn">Back to Menu</a>
             </div>
 
         {% else %}
 
-            {% if node.text and node.type != 'dialogue' %}
-                <p>{{ node.text }}</p>
+            {% if node.text and node.type != 'dialogue' and not node.content %}
+                <div class="story-text">
+                    {{ node.text }}
+                </div>
             {% endif %}
 
             {% if node.dialogue %}
                 {% for line in node.dialogue %}
                     <div class="dialogue-box">
-                        <strong>{{ line.speaker }}:</strong> {{ line.text }}
+                        {% if line.speaker %}<strong>{{ line.speaker }}:</strong>{% endif %}
+                        {{ line.text }}
                     </div>
                 {% endfor %}
             {% endif %}
 
             {% for line in node.content %}
                  <div class="dialogue-box">
-                    <strong>{{ line.speaker }}:</strong> {{ line.text }}
+                    {% if line.speaker %}<strong>{{ line.speaker }}:</strong>{% endif %}
+                    {{ line.text }}
                 </div>
             {% endfor %}
 
@@ -51,11 +189,8 @@
             <div class="choices">
                 <h3>What do you want to do?</h3>
                 {% for choice in node.choices %}
-                    <a href="{% url 'play_node' story_id=story_id node_id=choice.target_node %}" class="btn choice-btn">
+                    <a href="{% url 'play_node' story_id=story_id node_id=choice.target_node %}" class="choice-btn">
                         {{ choice.label }}
-                        {% if choice.effect %}
-                            <small>({{ choice.effect }})</small>
-                        {% endif %}
                     </a>
                 {% endfor %}
             </div>
