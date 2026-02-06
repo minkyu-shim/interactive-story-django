@@ -3,10 +3,14 @@ from .services import get_stories, get_page, get_story_start
 from django.shortcuts import redirect
 from .models import Play
 
+
 def story_list(request):
-    # Fetch stories from the Flask API to here
     stories = get_stories()
-    # Send them to the 'story_list.html' template
+
+    # If the list is empty (None or []), assume the server is sleeping or down
+    if not stories:
+        return render(request, 'gameplay/waking_up.html')
+
     return render(request, 'gameplay/story_list.html', {'stories': stories})
 
 

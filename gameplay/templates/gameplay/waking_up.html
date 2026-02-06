@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Waking Up...</title>
+    <meta http-equiv="refresh" content="10">
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .loader { font-size: 50px; }
+        .message { color: #666; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="loader">☕</div>
+    <h1>Server is Waking Up</h1>
+    <div class="message">
+        <p>Our free cloud servers are booting up from sleep mode.</p>
+        <p>This typically takes <strong>30-60 seconds</strong>.</p>
+        <p>This page will refresh automatically...</p>
+    </div>
+    <br>
+    <a href="{% url 'story_list' %}"><button>Try Now</button></a>
+</body>
+</html>
