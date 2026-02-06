@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from gameplay.views import story_list, play_node, start_story
+from gameplay.views import story_list, play_node, start_story, global_stats
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,4 +27,5 @@ urlpatterns = [
 
     # NEW: We need both story_id and the string node_id in the URL
     path('play/<int:story_id>/<str:node_id>/', play_node, name='play_node'),
+    path('stats/', global_stats, name='global_stats'),
 ]

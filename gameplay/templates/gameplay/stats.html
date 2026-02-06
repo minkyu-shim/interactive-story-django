@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Global Statistics</title>
+</head>
+<body>
+    <h1>Server Statistics</h1>
+    <p>Total Stories Played: <strong>{{ total_plays }}</strong></p>
+
+    <h2>Ending Breakdown</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Ending Name (ID)</th>
+                <th>Times Reached</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in ending_stats %}
+            <tr>
+                <td>{{ stat.ending_node_id }}</td>
+                <td>{{ stat.count }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No data yet. Go play a story!</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+    <a href="{% url 'story_list' %}">Back to Games</a>
+</body>
+</html>

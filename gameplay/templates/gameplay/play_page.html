@@ -3,53 +3,63 @@
 <head>
     <title>Playing Story</title>
     <style>
-        .dialogue-box { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
-        .speaker { font-weight: bold; color: #333; margin-bottom: 5px; }
-        .text { font-size: 1.1em; line-height: 1.5; }
-        .choice-btn { display: block; margin: 10px 0; padding: 10px; background: #eee; text-decoration: none; color: black; border-radius: 4px; }
+        .story-container { max-width: 800px; margin: 0 auto; padding: 20px; font-family: sans-serif; }
+        .dialogue-box { background: #f9f9f9; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 15px; }
+        .ending-box { border: 2px solid #28a745; background-color: #e8f5e9; padding: 30px; text-align: center; border-radius: 10px; }
+        .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;}
+        .choice-btn { display: block; background: #eee; color: #333; margin: 10px 0; width: 100%; text-align: left; }
         .choice-btn:hover { background: #ddd; }
-        .effect { font-size: 0.8em; color: #666; margin-left: 10px; }
     </style>
 </head>
 <body>
     <div class="story-container">
 
-        {% if node.background %}
-            <p><em>Scene: {{ node.background }}</em></p>
-        {% endif %}
+        <h2>{{ node.title }}</h2>
 
-        {% for line in node.content %}
-            <div class="dialogue-box">
-                {% if line.speaker %}
-                    <div class="speaker">{{ line.speaker }}</div>
-                {% endif %}
-                <div class="text">{{ line.text }}</div>
+        {% if is_ending %}
+
+            <div class="ending-box">
+                <h1>THE END</h1>
+                <p style="font-size: 1.2em;">{{ node.text }}</p>
+
+                <br>
+                <a href="{% url 'story_list' %}" class="btn">Back to Menu</a>
             </div>
-        {% endfor %}
 
-        <hr>
-
-        {% if node.is_ending %}
-            <div class="ending-screen">
-                <h2>THE END</h2>
-                {% if node.outcome %}
-                    <h3>Result: {{ node.outcome }}</h3>
-                {% endif %}
-                <a href="{% url 'story_list' %}">Back to Story List</a>
-            </div>
         {% else %}
+
+            {% if node.text and node.type != 'dialogue' %}
+                <p>{{ node.text }}</p>
+            {% endif %}
+
+            {% if node.dialogue %}
+                {% for line in node.dialogue %}
+                    <div class="dialogue-box">
+                        <strong>{{ line.speaker }}:</strong> {{ line.text }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% for line in node.content %}
+                 <div class="dialogue-box">
+                    <strong>{{ line.speaker }}:</strong> {{ line.text }}
+                </div>
+            {% endfor %}
+
+            <hr>
+
             <div class="choices">
                 <h3>What do you want to do?</h3>
                 {% for choice in node.choices %}
-                    <a class="choice-btn" href="{% url 'play_node' story_id=story_id node_id=choice.target_node %}">
+                    <a href="{% url 'play_node' story_id=story_id node_id=choice.target_node %}" class="btn choice-btn">
                         {{ choice.label }}
-
                         {% if choice.effect %}
-                            <span class="effect">({{ choice.effect }})</span>
+                            <small>({{ choice.effect }})</small>
                         {% endif %}
                     </a>
                 {% endfor %}
             </div>
+
         {% endif %}
     </div>
 </body>
