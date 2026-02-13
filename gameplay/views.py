@@ -1,5 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Play, PlaySession
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.core.exceptions import PermissionDenied
+from .models import Play, PlaySession, StoryOwnership
 from .services import (
     get_stories, get_story_start, get_node, get_story_details,
     create_story, update_story, delete_story, create_page, create_choice
@@ -44,8 +48,22 @@ def story_list(request):
     })
 
 
+def signup(request):
+    """Level 16: User registration."""
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('story_list')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/signup.html', {'form': form})
+
+
+@login_required
 def author_dashboard(request):
-    """Author View: Shows all stories including drafts."""
+    """Author View: Shows all stories including drafts. Admins see everything, authors see their own."""
     search_query = request.GET.get('search', '')
     status_filter = request.GET.get('status', '')  # Allow filtering by any status here
 
@@ -57,6 +75,11 @@ def author_dashboard(request):
 
     if stories is None:
         return render(request, 'gameplay/waking_up.html')
+
+    # Level 16: Ownership filtering
+    if not request.user.is_staff:
+        owned_ids = StoryOwnership.objects.filter(user=request.user).values_list('story_id', flat=True)
+        stories = [s for s in stories if s['id'] in owned_ids]
 
     if search_query:
         query = search_query.lower()
@@ -110,10 +133,13 @@ def play_node(request, story_id, node_id):
         if not is_preview:
             # Save the Play Record only if NOT a draft
             try:
-                Play.objects.create(
+                play_obj = Play.objects.create(
                     story_id=story_id,
                     ending_node_id=node_data.get('id', node_id)
                 )
+                if request.user.is_authenticated:
+                    play_obj.user = request.user
+                    play_obj.save()
             except Exception as e:
                 print(f"Save Error: {e}")
 
@@ -196,12 +222,13 @@ def global_stats(request):
     })
 
 
+@login_required
 def create_story_view(request):
     """View to create a new story."""
     if request.method == 'POST':
         title = request.POST.get('title')
         description = request.POST.get('description')
-        status = 'published'  # Level 10: All stories are published
+        status = 'published'
 
         data = {
             'title': title,
@@ -211,13 +238,26 @@ def create_story_view(request):
 
         new_story = create_story(data)
         if new_story:
+            # Level 16: Save ownership
+            StoryOwnership.objects.create(user=request.user, story_id=new_story['id'])
             return redirect('edit_story', story_id=new_story['id'])
 
     return render(request, 'gameplay/story_form.html', {'action': 'Create'})
 
 
+def check_ownership(user, story_id):
+    """Helper to check if a user owns a story or is admin."""
+    if user.is_staff:
+        return True
+    return StoryOwnership.objects.filter(user=user, story_id=story_id).exists()
+
+
+@login_required
 def edit_story_view(request, story_id):
     """View to edit a story and its pages."""
+    if not check_ownership(request.user, story_id):
+        raise PermissionDenied
+
     story = get_story_details(story_id)
     if not story:
         return redirect('story_list')
@@ -238,16 +278,25 @@ def edit_story_view(request, story_id):
     return render(request, 'gameplay/story_edit.html', {'story': story})
 
 
+@login_required
 def delete_story_view(request, story_id):
     """View to delete a story."""
+    if not check_ownership(request.user, story_id):
+        raise PermissionDenied
+
     if request.method == 'POST':
         if delete_story(story_id):
+            StoryOwnership.objects.filter(story_id=story_id).delete()
             return redirect('story_list')
     return render(request, 'gameplay/story_confirm_delete.html', {'story_id': story_id})
 
 
+@login_required
 def add_page_view(request, story_id):
     """View to add a page to a story."""
+    if not check_ownership(request.user, story_id):
+        raise PermissionDenied
+
     if request.method == 'POST':
         text = request.POST.get('text')
         is_ending = request.POST.get('is_ending') == 'on'
@@ -265,8 +314,12 @@ def add_page_view(request, story_id):
     return render(request, 'gameplay/page_form.html', {'story_id': story_id})
 
 
+@login_required
 def add_choice_view(request, story_id, page_id):
     """View to add a choice to a page."""
+    if not check_ownership(request.user, story_id):
+        raise PermissionDenied
+
     if request.method == 'POST':
         text = request.POST.get('text')
         next_page_id = request.POST.get('next_page_id')

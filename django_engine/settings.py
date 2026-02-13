@@ -122,3 +122,9 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+LOGIN_REDIRECT_URL = 'story_list'
+LOGOUT_REDIRECT_URL = 'story_list'
+
+# Level 16: API Security
+FLASK_API_KEY = "my-super-secret-api-key"

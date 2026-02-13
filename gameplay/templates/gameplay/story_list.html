@@ -101,6 +101,18 @@
     </style>
 </head>
 <body>
+    <div style="width: 100%; max-width: 850px; display: flex; justify-content: flex-end; padding: 10px 0;">
+        {% if user.is_authenticated %}
+            <span style="margin-right: 15px; align-self: center;">Welcome, <strong>{{ user.username }}</strong></span>
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" style="background: none; border: none; color: #e57373; cursor: pointer; text-decoration: underline; font-family: inherit; font-size: inherit;">Logout</button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}" style="margin-right: 15px; color: #619af3; text-decoration: none;">Login</a>
+            <a href="{% url 'signup' %}" style="color: #619af3; text-decoration: none;">Sign Up</a>
+        {% endif %}
+    </div>
     <div class="container">
         <h1>{% if view_mode == 'author' %}Author Dashboard{% else %}Available Stories{% endif %}</h1>
         
