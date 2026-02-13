@@ -93,29 +93,39 @@
 </head>
 <body>
     <h1>Server Statistics</h1>
-    <p>Total Stories Played: <strong>{{ total_plays }}</strong></p>
+    <p>Total Global Plays: <strong>{{ total_plays }}</strong></p>
 
-    <h2>Ending Breakdown</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Ending Name (ID)</th>
-                <th>Times Reached</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for stat in ending_stats %}
-            <tr>
-                <td>{{ stat.ending_node_id }}</td>
-                <td>{{ stat.count }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="2">No data yet. Go play a story!</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% for stat in story_stats %}
+        <div class="stat-card" style="background: white; border: 1px solid #e0e0e0; border-radius: 15px; padding: 25px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 80%; max-width: 800px;">
+            <h2 style="font-family: 'Playfair Display', serif; color: #6a68a6; margin-top: 0;">{{ stat.story_title }}</h2>
+            <p>Total Plays for this story: <strong>{{ stat.total_plays }}</strong></p>
+            
+            <h3 style="font-size: 1.1em; margin-top: 20px;">Ending Breakdown:</h3>
+            <table style="width: 100%; margin-top: 10px; box-shadow: none; border-radius: 0;">
+                <thead>
+                    <tr>
+                        <th style="background: #619af3;">Ending Name (ID)</th>
+                        <th style="background: #619af3;">Times Reached</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ending in stat.endings %}
+                    <tr>
+                        <td>{{ ending.ending_node_id }}</td>
+                        <td>{{ ending.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" style="text-align: center; color: #777;">No endings reached yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% empty %}
+        <p style="text-align: center; font-style: italic;">No play data recorded yet. Go play some stories!</p>
+    {% endfor %}
+    
     <br>
     <a href="{% url 'story_list' %}" class="back-link">Back to Games</a>
 </body>

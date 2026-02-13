@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NAHB - {{ action }} Story</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.7;
+            color: #3f3e53;
+            background-color: #f7f7f9;
+            margin: 0;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            box-sizing: border-box;
+            margin-top: 30px;
+            border: 1px solid #e0e0e0;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: #5d5c7c;
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        form div {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 12px 25px;
+            background: #619af3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #619af3;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ action }} Story</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div>
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" required value="{{ story.title }}">
+            </div>
+            <div>
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="4" required>{{ story.description }}</textarea>
+            </div>
+            <button type="submit">{{ action }} Story</button>
+        </form>
+        <a href="{% url 'story_list' %}" class="back-link">Back to List</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NAHB - Edit Story: {{ story.title }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.7;
+            color: #3f3e53;
+            background-color: #f7f7f9;
+            margin: 0;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            max-width: 850px;
+            width: 100%;
+            padding: 40px;
+            box-sizing: border-box;
+            margin-top: 30px;
+            border: 1px solid #e0e0e0;
+        }
+        h1, h2 {
+            font-family: 'Playfair Display', serif;
+            color: #5d5c7c;
+        }
+        .section {
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .page-item {
+            background: #fcfcfc;
+            border: 1px solid #e8e8e8;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .choice-item {
+            background: #fff;
+            border-left: 4px solid #619af3;
+            padding: 10px;
+            margin-top: 10px;
+            margin-left: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background: #619af3;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        .btn-secondary { background: #5d5c7c; }
+        .btn-success { background: #66bb6a; }
+        
+        form div { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; }
+        input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Edit Story: {{ story.title }}</h1>
+        
+        <div class="section">
+            <form method="post">
+                {% csrf_token %}
+                <div>
+                    <label>Title</label>
+                    <input type="text" name="title" value="{{ story.title }}" required>
+                </div>
+                <div>
+                    <label>Description</label>
+                    <textarea name="description" rows="3" required>{{ story.description }}</textarea>
+                </div>
+                <button type="submit" class="btn">Update Details</button>
+            </form>
+        </div>
+
+        <div class="section">
+            <h2>Pages (Scenes)</h2>
+            <a href="{% url 'add_page' story.id %}" class="btn btn-success" style="margin-bottom: 20px;">+ Add New Page</a>
+            
+            {% for page in story.pages %}
+                <div class="page-item">
+                    <strong>ID: {{ page.id }}</strong> 
+                    {% if page.is_ending %}<span style="color: #e57373;">(Ending: {{ page.ending_label }})</span>{% endif %}
+                    <p>{{ page.text|truncatewords:20 }}</p>
+                    
+                    <div style="margin-top: 10px;">
+                        <a href="{% url 'add_choice' story.id page.id %}" class="btn btn-secondary">Add Choice</a>
+                    </div>
+                    
+                    {% for choice in page.choices %}
+                        <div class="choice-item">
+                            "{{ choice.text }}" &rarr; Page {{ choice.next_page_id }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% empty %}
+                <p>No pages yet. Create the first one!</p>
+            {% endfor %}
+        </div>
+        
+        <a href="{% url 'story_list' %}" style="color: #619af3; text-decoration: none;">&larr; Back to Story List</a>
+    </div>
+</body>
+</html>

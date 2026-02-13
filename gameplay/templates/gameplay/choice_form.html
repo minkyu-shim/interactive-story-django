@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NAHB - Add Choice</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f7f7f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h1 { font-family: 'Playfair Display', serif; color: #5d5c7c; }
+        form div { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="text"], select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { padding: 12px 25px; background: #619af3; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 1em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Add Choice</h1>
+        <p>Adding choice to Page #{{ page_id }}</p>
+        <form method="post">
+            {% csrf_token %}
+            <div>
+                <label>Choice Text</label>
+                <input type="text" name="text" required placeholder="What should the player see?">
+            </div>
+            <div>
+                <label>Next Page</label>
+                <select name="next_page_id" required>
+                    <option value="">-- Select Destination Page --</option>
+                    {% for page in pages %}
+                        <option value="{{ page.id }}">Page {{ page.id }}: {{ page.text|truncatewords:10 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn">Add Choice</button>
+        </form>
+        <p style="text-align: center;"><a href="{% url 'edit_story' story_id %}" style="color: #619af3; text-decoration: none;">Cancel</a></p>
+    </div>
+</body>
+</html>

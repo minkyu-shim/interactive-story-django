@@ -103,12 +103,34 @@
 <body>
     <div class="container">
         <h1>Available Stories</h1>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <form method="get" action="{% url 'story_list' %}" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <input type="text" name="search" placeholder="Search by title..." value="{{ search_query }}" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 250px;">
+                <select name="status" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Published</option>
+                    <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Drafts</option>
+                    <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+                    <option value="" {% if status_filter == '' %}selected{% endif %}>All</option>
+                </select>
+                <button type="submit" style="padding: 10px 20px; background: #619af3; color: white; border: none; border-radius: 8px; cursor: pointer;">Search</button>
+                <a href="{% url 'story_list' %}" style="padding: 10px 20px; background: #ddd; color: #333; text-decoration: none; border-radius: 8px;">Reset</a>
+            </form>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="{% url 'create_story' %}" style="display: inline-block; padding: 10px 20px; background: #619af3; color: white; text-decoration: none; border-radius: 8px;">Create New Story</a>
+            <a href="{% url 'global_stats' %}" style="display: inline-block; padding: 10px 20px; background: #5d5c7c; color: white; text-decoration: none; border-radius: 8px; margin-left: 10px;">View Global Stats</a>
+        </div>
+
         <ul>
             {% for story in stories %}
                 <li>
                     <strong>{{ story.title }}</strong><br>
                     {{ story.description }}<br>
-                    <a href="{% url 'start_story' story.id %}">Play this story</a>
+                    <a href="{% url 'start_story' story.id %}">Play</a>
+                    <a href="{% url 'edit_story' story.id %}" style="background: #a7bfe8; margin-left: 5px;">Edit</a>
+                    <a href="{% url 'delete_story' story.id %}" style="background: #e57373; margin-left: 5px;">Delete</a>
                 </li>
             {% empty %}
                 <li class="empty-message">No stories found. Make sure your Flask API is running and seeded!</li>
