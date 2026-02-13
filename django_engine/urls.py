@@ -19,12 +19,13 @@ from django.urls import path
 from gameplay.views import (
     story_list, play_node, start_story, global_stats,
     create_story_view, edit_story_view, delete_story_view,
-    add_page_view, add_choice_view
+    add_page_view, add_choice_view, author_dashboard
 )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', story_list, name='story_list'),
+    path('author/', author_dashboard, name='author_dashboard'),
 
     # Logic to find the start node
     path('story/<int:story_id>/start/', start_story, name='start_story'),

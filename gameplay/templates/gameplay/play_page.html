@@ -136,6 +136,12 @@
     </style>
 </head>
 <body>
+    {% if is_preview %}
+        <div style="background: #fff3e0; color: #ef6c00; text-align: center; padding: 10px; font-weight: bold; border-bottom: 2px solid #ef6c00; width: 100%; position: fixed; top: 0; left: 0; z-index: 1000;">
+            PREVIEW MODE: This is a draft story. Statistics will not be recorded.
+        </div>
+        <div style="height: 40px;"></div>
+    {% endif %}
     <div class="story-container">
 
         <h2>{{ node.title }}</h2>
@@ -143,7 +149,7 @@
         {% if is_ending %}
 
             <div class="ending-box">
-                <h1>THE END</h1>
+                <h1>{{ node.ending_label|default:"THE END" }}</h1>
 
                 <div class="ending-text">
                     {% for line in node.content %}

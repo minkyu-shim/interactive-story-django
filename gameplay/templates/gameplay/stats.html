@@ -104,19 +104,21 @@
             <table style="width: 100%; margin-top: 10px; box-shadow: none; border-radius: 0;">
                 <thead>
                     <tr>
-                        <th style="background: #619af3;">Ending Name (ID)</th>
+                        <th style="background: #619af3;">Ending Label</th>
                         <th style="background: #619af3;">Times Reached</th>
+                        <th style="background: #619af3;">Distribution</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for ending in stat.endings %}
                     <tr>
-                        <td>{{ ending.ending_node_id }}</td>
+                        <td><strong>{{ ending.label }}</strong> <small>({{ ending.id }})</small></td>
                         <td>{{ ending.count }}</td>
+                        <td>{{ ending.percentage }}%</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="2" style="text-align: center; color: #777;">No endings reached yet.</td>
+                        <td colspan="3" style="text-align: center; color: #777;">No endings reached yet.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

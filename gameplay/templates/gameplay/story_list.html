@@ -102,32 +102,48 @@
 </head>
 <body>
     <div class="container">
-        <h1>Available Stories</h1>
+        <h1>{% if view_mode == 'author' %}Author Dashboard{% else %}Available Stories{% endif %}</h1>
         
         <div style="text-align: center; margin-bottom: 30px;">
-            <form method="get" action="{% url 'story_list' %}" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <form method="get" action="." style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <input type="text" name="search" placeholder="Search by title..." value="{{ search_query }}" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 250px;">
+                
+                {% if view_mode == 'author' %}
                 <select name="status" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <option value="" {% if status_filter == '' %}selected{% endif %}>All Status</option>
                     <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Published</option>
                     <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Drafts</option>
                     <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
-                    <option value="" {% if status_filter == '' %}selected{% endif %}>All</option>
                 </select>
+                {% endif %}
+                
                 <button type="submit" style="padding: 10px 20px; background: #619af3; color: white; border: none; border-radius: 8px; cursor: pointer;">Search</button>
-                <a href="{% url 'story_list' %}" style="padding: 10px 20px; background: #ddd; color: #333; text-decoration: none; border-radius: 8px;">Reset</a>
+                <a href="." style="padding: 10px 20px; background: #ddd; color: #333; text-decoration: none; border-radius: 8px;">Reset</a>
             </form>
         </div>
 
         <div style="text-align: center; margin-bottom: 20px;">
-            <a href="{% url 'create_story' %}" style="display: inline-block; padding: 10px 20px; background: #619af3; color: white; text-decoration: none; border-radius: 8px;">Create New Story</a>
+            {% if view_mode == 'author' %}
+                <a href="{% url 'create_story' %}" style="display: inline-block; padding: 10px 20px; background: #619af3; color: white; text-decoration: none; border-radius: 8px;">+ Create New Story</a>
+                <a href="{% url 'story_list' %}" style="display: inline-block; padding: 10px 20px; background: #5d5c7c; color: white; text-decoration: none; border-radius: 8px; margin-left: 10px;">Switch to Reader View</a>
+            {% else %}
+                <a href="{% url 'author_dashboard' %}" style="display: inline-block; padding: 10px 20px; background: #5d5c7c; color: white; text-decoration: none; border-radius: 8px;">Author Tools</a>
+            {% endif %}
             <a href="{% url 'global_stats' %}" style="display: inline-block; padding: 10px 20px; background: #5d5c7c; color: white; text-decoration: none; border-radius: 8px; margin-left: 10px;">View Global Stats</a>
         </div>
 
         <ul>
             {% for story in stories %}
                 <li>
-                    <strong>{{ story.title }}</strong><br>
+                    <strong>{{ story.title }}</strong>
+                    {% if view_mode == 'author' %}
+                        <span style="font-size: 0.8em; padding: 3px 8px; border-radius: 5px; background: {% if story.status == 'published' %}#e8f5e9; color: #2e7d32;{% elif story.status == 'draft' %}#fff3e0; color: #ef6c00;{% else %}#ffebee; color: #c62828;{% endif %}">
+                            {{ story.status|upper }}
+                        </span>
+                    {% endif %}
+                    <br>
                     {{ story.description }}<br>
+                    
                     {% if story.resume_node %}
                         <a href="{% url 'play_node' story.id story.resume_node %}" style="background: #66bb6a;">Resume</a>
                         <a href="{% url 'start_story' story.id %}" style="background: #a7bfe8; margin-left: 5px;">Restart</a>
@@ -135,11 +151,13 @@
                         <a href="{% url 'start_story' story.id %}">Play</a>
                     {% endif %}
                     
-                    <a href="{% url 'edit_story' story.id %}" style="background: #5d5c7c; margin-left: 5px;">Edit</a>
-                    <a href="{% url 'delete_story' story.id %}" style="background: #e57373; margin-left: 5px;">Delete</a>
+                    {% if view_mode == 'author' %}
+                        <a href="{% url 'edit_story' story.id %}" style="background: #5d5c7c; margin-left: 5px;">Edit</a>
+                        <a href="{% url 'delete_story' story.id %}" style="background: #e57373; margin-left: 5px;">Delete</a>
+                    {% endif %}
                 </li>
             {% empty %}
-                <li class="empty-message">No stories found. Make sure your Flask API is running and seeded!</li>
+                <li class="empty-message">No stories found.</li>
             {% endfor %}
         </ul>
     </div>
