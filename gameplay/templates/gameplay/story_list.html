@@ -128,8 +128,14 @@
                 <li>
                     <strong>{{ story.title }}</strong><br>
                     {{ story.description }}<br>
-                    <a href="{% url 'start_story' story.id %}">Play</a>
-                    <a href="{% url 'edit_story' story.id %}" style="background: #a7bfe8; margin-left: 5px;">Edit</a>
+                    {% if story.resume_node %}
+                        <a href="{% url 'play_node' story.id story.resume_node %}" style="background: #66bb6a;">Resume</a>
+                        <a href="{% url 'start_story' story.id %}" style="background: #a7bfe8; margin-left: 5px;">Restart</a>
+                    {% else %}
+                        <a href="{% url 'start_story' story.id %}">Play</a>
+                    {% endif %}
+                    
+                    <a href="{% url 'edit_story' story.id %}" style="background: #5d5c7c; margin-left: 5px;">Edit</a>
                     <a href="{% url 'delete_story' story.id %}" style="background: #e57373; margin-left: 5px;">Delete</a>
                 </li>
             {% empty %}

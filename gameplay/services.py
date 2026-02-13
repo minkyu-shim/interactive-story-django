@@ -3,6 +3,7 @@ import requests
 # Update this to your deployed URL if needed
 FLASK_URL = "https://interactive-story-api-dylv.onrender.com"
 
+
 def get_stories(params=None):
     """Fetches list of stories with optional filters."""
     try:
@@ -12,6 +13,7 @@ def get_stories(params=None):
     except requests.RequestException:
         return None
     return []
+
 
 def get_story_start(story_id):
     """Fetches the start node of a story."""
@@ -23,8 +25,8 @@ def get_story_start(story_id):
         return None
     return None
 
-def get_node(story_id, node_id):
 
+def get_node(story_id, node_id):
     """
 
     Fetches a specific node using the story_id and custom_id (string).
@@ -40,7 +42,6 @@ def get_node(story_id, node_id):
         response = requests.get(f"{FLASK_URL}/api/stories/{story_id}/nodes/{node_id}")
 
         if response.status_code == 200:
-
             return response.json()
 
     except requests.RequestException:
@@ -50,9 +51,7 @@ def get_node(story_id, node_id):
     return None
 
 
-
 def create_story(data):
-
     """Creates a new story."""
 
     try:
@@ -60,7 +59,6 @@ def create_story(data):
         response = requests.post(f"{FLASK_URL}/api/stories", json=data)
 
         if response.status_code == 201:
-
             return response.json()
 
     except requests.RequestException:
@@ -70,9 +68,7 @@ def create_story(data):
     return None
 
 
-
 def update_story(story_id, data):
-
     """Updates an existing story."""
 
     try:
@@ -80,7 +76,6 @@ def update_story(story_id, data):
         response = requests.put(f"{FLASK_URL}/api/stories/{story_id}", json=data)
 
         if response.status_code == 200:
-
             return response.json()
 
     except requests.RequestException:
@@ -90,9 +85,7 @@ def update_story(story_id, data):
     return None
 
 
-
 def delete_story(story_id):
-
     """Deletes a story."""
 
     try:
@@ -106,9 +99,7 @@ def delete_story(story_id):
         return False
 
 
-
 def create_page(story_id, data):
-
     """Creates a new page (node) for a story."""
 
     try:
@@ -116,7 +107,6 @@ def create_page(story_id, data):
         response = requests.post(f"{FLASK_URL}/api/stories/{story_id}/pages", json=data)
 
         if response.status_code == 201:
-
             return response.json()
 
     except requests.RequestException:
@@ -126,9 +116,7 @@ def create_page(story_id, data):
     return None
 
 
-
 def create_choice(page_id, data):
-
     """Creates a new choice for a page."""
 
     try:
@@ -138,7 +126,6 @@ def create_choice(page_id, data):
         response = requests.post(f"{FLASK_URL}/api/pages/{page_id}/choices", json=data)
 
         if response.status_code == 201:
-
             return response.json()
 
     except requests.RequestException:
@@ -148,9 +135,7 @@ def create_choice(page_id, data):
     return None
 
 
-
 def get_story_details(story_id):
-
     """Fetches full details of a story."""
 
     try:
@@ -158,7 +143,6 @@ def get_story_details(story_id):
         response = requests.get(f"{FLASK_URL}/api/stories/{story_id}")
 
         if response.status_code == 200:
-
             return response.json()
 
     except requests.RequestException:
