@@ -134,6 +134,7 @@ All endpoints are under `/api`.
 |---|---|---|
 | `DJANGO_SECRET_KEY` | dev fallback | Django secret key |
 | `DJANGO_DEBUG` | `False` | Debug mode |
+| `DATABASE_URL` | SQLite fallback | Django DB URL (Postgres in Docker/Render) |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Allowed hosts |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://*.onrender.com` | CSRF trusted origins |
 | `FLASK_BASE_URL` | `https://interactive-story-api-dylv.onrender.com` | Flask API base URL |
@@ -219,6 +220,34 @@ python manage.py runserver
 Important note:
 
 - Running `python seed.py` in Flask recreates tables and reseeds story content.
+
+## Running with Docker
+
+1. Copy the Docker env template.
+
+```powershell
+Copy-Item .env.docker.example .env.docker
+```
+
+2. Build and start Django + Postgres.
+
+```powershell
+docker compose up --build
+```
+
+3. Open `http://127.0.0.1:8000`.
+
+Notes:
+
+- On startup, the container runs `migrate` and `collectstatic`.
+- If `DJANGO_SUPERUSER_USERNAME` and `DJANGO_SUPERUSER_PASSWORD` are set in `.env.docker`, an admin user is created/updated automatically.
+- Django uses Postgres in Docker via `DATABASE_URL=postgresql://django:django@db:5432/django_engine`.
+
+Stop and remove containers:
+
+```powershell
+docker compose down
+```
 
 ## Common Workflows
 

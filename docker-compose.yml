@@ -1,0 +1,35 @@
+services:
+  web:
+    build: .
+    command: gunicorn django_engine.wsgi:application --bind 0.0.0.0:8000
+    env_file:
+      - .env.docker
+    environment:
+      DATABASE_URL: postgresql://django:django@db:5432/django_engine
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,web
+      DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - static_data:/app/staticfiles
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: django_engine
+      POSTGRES_USER: django
+      POSTGRES_PASSWORD: django
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U django -d django_engine"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+  static_data:
