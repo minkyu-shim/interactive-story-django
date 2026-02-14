@@ -8,10 +8,11 @@ It works together with a separate Flask REST API project (https://github.com/min
 
 ## Live Deployment
 
-- Main app for testing (Django):
+- Go to this page and Wait until it loads (Flask):
+  - https://interactive-story-api-dylv.onrender.com
+
+- Then open Main app for testing (Django):
   - https://interactive-story-django.onrender.com
-- Render deployment page:
-  - https://dashboard.render.com/web/srv-d62tlph4tr6s73fmat90/deploys/dep-d689viogjchc73bfql5g
 
 ## Demo Credentials
 
