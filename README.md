@@ -8,7 +8,8 @@ It works together with a separate Flask REST API project (https://github.com/min
 
 ## Live Deployment
 
-
+- Open the link below to load Flask and Wait until 404 Not Found:
+  - https://interactive-story-api-dylv.onrender.com
 
 - Then open Main app for testing (Django):
   - https://interactive-story-django.onrender.com
