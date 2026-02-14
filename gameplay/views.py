@@ -446,6 +446,150 @@ def find_choice(story, choice_id):
     return None, None
 
 
+def _choice_target(choice):
+    return (
+        choice.get('next_page_id')
+        or choice.get('target_node')
+        or choice.get('target')
+    )
+
+
+def _story_graph_payload(story):
+    pages = story.get('pages', []) or []
+    node_ids = []
+    page_map = {}
+
+    for page in pages:
+        page_id = page.get('id')
+        if page_id is None:
+            continue
+        page_id = str(page_id)
+        node_ids.append(page_id)
+        page_map[page_id] = page
+
+    start_node_id = story.get('start_node_id')
+    if start_node_id is not None:
+        start_node_id = str(start_node_id)
+    elif node_ids:
+        start_node_id = node_ids[0]
+
+    adjacency = {node_id: [] for node_id in node_ids}
+    missing_nodes = set()
+    graph_edges = []
+
+    for page in pages:
+        source_id = page.get('id')
+        if source_id is None:
+            continue
+        source_id = str(source_id)
+        for index, choice in enumerate(page.get('choices', []) or []):
+            target_raw = _choice_target(choice)
+            if target_raw is None:
+                continue
+            target_id = str(target_raw)
+            is_broken = target_id not in adjacency
+            render_target = target_id
+            if is_broken:
+                render_target = f"missing::{target_id}"
+                missing_nodes.add(target_id)
+            else:
+                adjacency[source_id].append(target_id)
+
+            choice_label = (choice.get('text') or choice.get('label') or '').strip()
+            if len(choice_label) > 56:
+                choice_label = f"{choice_label[:53]}..."
+
+            edge_id_source = choice.get('id', index)
+            graph_edges.append({
+                'data': {
+                    'id': f"edge::{source_id}::{render_target}::{edge_id_source}",
+                    'source': source_id,
+                    'target': render_target,
+                    'label': choice_label,
+                    'broken_target': target_id if is_broken else '',
+                },
+                'classes': 'broken' if is_broken else '',
+            })
+
+    reachable = set()
+    if start_node_id in adjacency:
+        stack = [start_node_id]
+        while stack:
+            current = stack.pop()
+            if current in reachable:
+                continue
+            reachable.add(current)
+            stack.extend(adjacency.get(current, []))
+
+    unreachable = [node_id for node_id in node_ids if node_id not in reachable]
+
+    graph_nodes = []
+    for node_id in node_ids:
+        page = page_map[node_id]
+        title = page.get('title') or f"Node {node_id}"
+        short_title = title if len(title) <= 42 else f"{title[:39]}..."
+        node_label = f"{node_id}\n{short_title}"
+        node_classes = []
+        if node_id == start_node_id:
+            node_classes.append('start')
+        if page.get('is_ending') or page.get('type') == 'ending':
+            node_classes.append('ending')
+        if node_id in unreachable:
+            node_classes.append('unreachable')
+
+        graph_nodes.append({
+            'data': {
+                'id': node_id,
+                'label': node_label,
+                'full_title': title,
+                'text_preview': (page.get('text') or '')[:280],
+            },
+            'classes': ' '.join(node_classes),
+        })
+
+    for missing_target_id in sorted(missing_nodes):
+        graph_nodes.append({
+            'data': {
+                'id': f"missing::{missing_target_id}",
+                'label': f"Missing: {missing_target_id}",
+                'full_title': 'Missing target node',
+                'text_preview': '',
+            },
+            'classes': 'missing',
+        })
+
+    graph_elements = graph_nodes + graph_edges
+
+    broken_edge_count = sum(1 for edge in graph_edges if edge.get('classes') == 'broken')
+
+    return {
+        'graph_elements': graph_elements,
+        'start_node_id': start_node_id or '',
+        'node_count': len(node_ids),
+        'edge_count': len(graph_edges),
+        'unreachable_count': len(unreachable),
+        'broken_edge_count': broken_edge_count,
+        'unreachable_node_ids': unreachable,
+    }
+
+
+@login_required
+def story_graph_view(request, story_id):
+    if not check_ownership(request.user, story_id):
+        raise PermissionDenied
+
+    story = get_story_with_pages(story_id)
+    if not story:
+        return redirect('story_list')
+
+    graph_payload = _story_graph_payload(story)
+    return render(request, 'gameplay/story_graph.html', {
+        'story': story,
+        'story_id': story_id,
+        **graph_payload,
+    })
+
+
 @login_required
 def edit_story_view(request, story_id):
     """View to edit a story and its pages."""

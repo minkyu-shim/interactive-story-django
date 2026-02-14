@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import StoryReport
+from .models import StoryOwnership, StoryReport
 
 
 class StoryReportTests(TestCase):
@@ -123,3 +123,76 @@ class StoryReportModerationTests(TestCase):
         })
         self.assertEqual(response.status_code, 302)
         self.assertIn(f'status={StoryReport.Status.IN_REVIEW}', response.url)
+
+
+class StoryGraphTests(TestCase):
+    def setUp(self):
+        self.story_id = 501
+        self.owner = User.objects.create_user(username='owner_user', password='pw123456')
+        self.staff = User.objects.create_user(username='staff_user', password='pw123456', is_staff=True)
+        self.other = User.objects.create_user(username='other_user', password='pw123456')
+        StoryOwnership.objects.create(user=self.owner, story_id=self.story_id)
+        self.graph_url = reverse('story_graph', kwargs={'story_id': self.story_id})
+
+    def _sample_story(self):
+        return {
+            'id': self.story_id,
+            'title': 'Graph Sample',
+            'start_node_id': 'start',
+            'pages': [
+                {
+                    'id': 'start',
+                    'title': 'Start',
+                    'is_ending': False,
+                    'text': 'Welcome node',
+                    'choices': [
+                        {'id': 1, 'text': 'Go next', 'next_page_id': 'mid'},
+                        {'id': 2, 'text': 'Go broken', 'next_page_id': 'ghost'},
+                    ],
+                },
+                {
+                    'id': 'mid',
+                    'title': 'Middle',
+                    'is_ending': True,
+                    'text': 'Ending node',
+                    'choices': [],
+                },
+                {
+                    'id': 'orphan',
+                    'title': 'Orphan',
+                    'is_ending': False,
+                    'text': 'Unreachable node',
+                    'choices': [],
+                },
+            ],
+        }
+
+    def test_graph_view_forbidden_for_non_owner_non_staff(self):
+        self.client.login(username='other_user', password='pw123456')
+        response = self.client.get(self.graph_url)
+        self.assertEqual(response.status_code, 403)
+
+    @patch('gameplay.views.get_story_details')
+    def test_staff_can_access_graph_without_ownership(self, mock_get_story_details):
+        mock_get_story_details.return_value = self._sample_story()
+        self.client.login(username='staff_user', password='pw123456')
+        response = self.client.get(self.graph_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Story Tree')
+
+    @patch('gameplay.views.get_story_details')
+    def test_graph_payload_marks_unreachable_and_broken(self, mock_get_story_details):
+        mock_get_story_details.return_value = self._sample_story()
+        self.client.login(username='owner_user', password='pw123456')
+        response = self.client.get(self.graph_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['node_count'], 3)
+        self.assertEqual(response.context['edge_count'], 2)
+        self.assertEqual(response.context['unreachable_count'], 1)
+        self.assertEqual(response.context['broken_edge_count'], 1)
+        self.assertIn('orphan', response.context['unreachable_node_ids'])
+
+        elements = response.context['graph_elements']
+        self.assertTrue(any(item.get('classes') == 'missing' for item in elements))
+        self.assertTrue(any(item.get('classes') == 'broken' for item in elements))

@@ -108,7 +108,10 @@
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h1>Story Builder</h1>
-            <a href="{% url 'story_list' %}" class="btn btn-outline">&larr; Exit Editor</a>
+            <div class="action-group">
+                <a href="{% url 'story_graph' story.id %}" class="btn btn-secondary">Tree View</a>
+                <a href="{% url 'story_list' %}" class="btn btn-outline">&larr; Exit Editor</a>
+            </div>
         </div>
         
         <div class="section">
@@ -139,7 +142,10 @@
         <div class="section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Adventure Nodes (Pages)</h2>
-                <a href="{% url 'add_page' story.id %}" class="btn btn-success">+ Add New Node</a>
+                <div class="action-group">
+                    <a href="{% url 'story_graph' story.id %}" class="btn btn-secondary">Open Graph</a>
+                    <a href="{% url 'add_page' story.id %}" class="btn btn-success">+ Add New Node</a>
+                </div>
             </div>
             
             {% for page in story.pages %}

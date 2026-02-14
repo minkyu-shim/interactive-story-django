@@ -21,6 +21,7 @@ from gameplay.views import (
     create_story_view, edit_story_view, delete_story_view,
     add_page_view, add_choice_view, author_dashboard, signup,
     submit_rating_comment, submit_story_report, report_moderation_list, report_moderation_update,
+    story_graph_view,
     edit_page_view, delete_page_view,
     edit_choice_view, delete_choice_view
 )
@@ -48,6 +49,7 @@ urlpatterns = [
     # Author CRUD
     path('author/story/create/', create_story_view, name='create_story'),
     path('author/story/<int:story_id>/edit/', edit_story_view, name='edit_story'),
+    path('author/story/<int:story_id>/graph/', story_graph_view, name='story_graph'),
     path('author/story/<int:story_id>/delete/', delete_story_view, name='delete_story'),
     
     # Pages
