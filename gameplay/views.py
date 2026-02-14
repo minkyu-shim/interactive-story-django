@@ -348,12 +348,21 @@ def edit_story_view(request, story_id):
             status = story.get('status', 'published')
 
         data = {
+            'id': story_id,
             'title': title,
             'description': description,
             'status': status
         }
 
-        update_story(story_id, data)
+        updated_story = update_story(story_id, data)
+        if updated_story is None:
+            logger.warning("Story update failed for story_id=%s", story_id)
+        elif str(updated_story.get('id')) != str(story_id):
+            logger.error(
+                "Story update returned mismatched id: requested=%s returned=%s",
+                story_id,
+                updated_story.get('id'),
+            )
         return redirect('edit_story', story_id=story_id)
 
     return render(request, 'gameplay/story_edit.html', {'story': story})

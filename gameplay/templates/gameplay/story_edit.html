@@ -112,7 +112,7 @@
         </div>
         
         <div class="section">
-            <form method="post">
+            <form method="post" id="story-info-form">
                 {% csrf_token %}
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div>
@@ -132,7 +132,7 @@
                     <label>Description</label>
                     <textarea name="description" rows="2" required>{{ story.description }}</textarea>
                 </div>
-                <button type="submit" class="btn">Save Story Info</button>
+                <button type="submit" class="btn" id="save-story-btn">Save Story Info</button>
             </form>
         </div>
 
@@ -209,5 +209,18 @@
             {% endfor %}
         </div>
     </div>
+    <script>
+        (function () {
+            var form = document.getElementById('story-info-form');
+            var submitBtn = document.getElementById('save-story-btn');
+            if (!form || !submitBtn) {
+                return;
+            }
+            form.addEventListener('submit', function () {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Saving...';
+            });
+        })();
+    </script>
 </body>
 </html>

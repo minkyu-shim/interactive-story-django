@@ -145,6 +145,6 @@ LOGOUT_REDIRECT_URL = 'story_list'
 
 # Level 16: API Security
 FLASK_BASE_URL = os.getenv('FLASK_BASE_URL', 'https://interactive-story-api-dylv.onrender.com').rstrip('/')
-FLASK_API_KEY = os.getenv('FLASK_API_KEY', '')
+FLASK_API_KEY = os.getenv('FLASK_API_KEY', 'my-super-secret-api-key')
 FLASK_REQUEST_TIMEOUT = float(os.getenv('FLASK_REQUEST_TIMEOUT', '10'))
 WAKE_UP_FLASK_ON_STARTUP = env_bool('WAKE_UP_FLASK_ON_STARTUP', True)
