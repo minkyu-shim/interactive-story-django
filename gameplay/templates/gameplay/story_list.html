@@ -1,197 +1,113 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>NAHB - Story List</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap');
-
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            line-height: 1.7;
-            color: #3f3e53;
-            background-color: #f7f7f9; /* Consistent soft background */
-            margin: 0;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-            max-width: 850px;
-            width: 100%;
-            padding: 40px;
-            box-sizing: border-box;
-            margin-top: 30px;
-            border: 1px solid #e0e0e0;
-        }
-        h1 {
-            font-family: 'Playfair Display', serif;
-            color: #5d5c7c;
-            text-align: center;
-            margin-bottom: 35px;
-            font-size: 2.4em;
-            letter-spacing: 0.05em;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            background-color: #fcfcfc; /* Very light background for list items */
-            border: 1px solid #e8e8e8;
-            border-radius: 12px;
-            margin-bottom: 18px;
-            padding: 20px 25px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-        }
-        li:hover {
-            transform: translateY(-5px); /* More pronounced hover effect */
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
-        li strong {
-            font-family: 'Playfair Display', serif; /* Consistent font for titles */
-            color: #6a68a6; /* Consistent title color */
-            font-size: 1.5em;
-            display: block;
-            margin-bottom: 8px;
-        }
-        li p { /* For description, if it's wrapped in p tags, otherwise adjust */
-            color: #4a4a60;
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-        li a {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 12px 25px;
-            background: linear-gradient(45deg, #a7bfe8, #619af3); /* Consistent button gradient */
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            font-size: 1em;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        li a:hover {
-            background: linear-gradient(45deg, #619af3, #a7bfe8);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-        li:last-child {
-            margin-bottom: 0;
-        }
-        .empty-message {
-            text-align: center;
-            font-style: italic;
-            color: #7a7a90; /* Softer color */
-            padding: 25px;
-            border: 1px dashed #ced4da;
-            border-radius: 12px;
-            margin-top: 25px;
-            background-color: #fcfcfc;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'gameplay/css/app.css' %}">
 </head>
-<body>
-    <div style="width: 100%; max-width: 850px; display: flex; justify-content: flex-end; padding: 10px 0;">
-        {% if user.is_authenticated %}
-            <span style="margin-right: 15px; align-self: center;">Welcome, <strong>{{ user.username }}</strong></span>
-            <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit" style="background: none; border: none; color: #e57373; cursor: pointer; text-decoration: underline; font-family: inherit; font-size: inherit;">Logout</button>
-            </form>
-        {% else %}
-            <a href="{% url 'login' %}" style="margin-right: 15px; color: #619af3; text-decoration: none;">Login</a>
-            <a href="{% url 'signup' %}" style="color: #619af3; text-decoration: none;">Sign Up</a>
-        {% endif %}
-    </div>
-    <div class="container">
-        <h1>{% if view_mode == 'author' %}Author Dashboard{% else %}Available Stories{% endif %}</h1>
-        
-        <div style="text-align: center; margin-bottom: 30px;">
-            <form method="get" action="." style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                <input type="text" name="search" placeholder="Search by title..." value="{{ search_query }}" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 250px;">
-                
-                {% if view_mode == 'author' %}
-                <select name="status" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
-                    <option value="" {% if status_filter == '' %}selected{% endif %}>All Status</option>
-                    <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Published</option>
-                    <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Drafts</option>
-                    <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
-                </select>
-                {% endif %}
-                
-                <button type="submit" style="padding: 10px 20px; background: #619af3; color: white; border: none; border-radius: 8px; cursor: pointer;">Search</button>
-                <a href="." style="padding: 10px 20px; background: #ddd; color: #333; text-decoration: none; border-radius: 8px;">Reset</a>
-            </form>
-        </div>
-
-        <div style="text-align: center; margin-bottom: 20px;">
-            {% if view_mode == 'author' %}
-                <a href="{% url 'create_story' %}" style="display: inline-block; padding: 10px 20px; background: #619af3; color: white; text-decoration: none; border-radius: 8px;">+ Create New Story</a>
-                <a href="{% url 'story_list' %}" style="display: inline-block; padding: 10px 20px; background: #5d5c7c; color: white; text-decoration: none; border-radius: 8px; margin-left: 10px;">Switch to Reader View</a>
+<body class="app-body story-list-page">
+    <div class="page-wrap">
+        <div class="top-auth-bar">
+            {% if user.is_authenticated %}
+                <span>Welcome, <strong>{{ user.username }}</strong></span>
+                <form action="{% url 'logout' %}" method="post" class="tight-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-linkish">Logout</button>
+                </form>
             {% else %}
-                <a href="{% url 'author_dashboard' %}" style="display: inline-block; padding: 10px 20px; background: #5d5c7c; color: white; text-decoration: none; border-radius: 8px;">Author Tools</a>
-            {% endif %}
-            <a href="{% url 'global_stats' %}" style="display: inline-block; padding: 10px 20px; background: #5d5c7c; color: white; text-decoration: none; border-radius: 8px; margin-left: 10px;">View Global Stats</a>
-            {% if user.is_staff %}
-                <a href="{% url 'moderation_reports' %}" style="display: inline-block; padding: 10px 20px; background: #8e44ad; color: white; text-decoration: none; border-radius: 8px; margin-left: 10px;">Moderate Reports</a>
+                <a href="{% url 'login' %}" class="inline-link-primary">Login</a>
+                <a href="{% url 'signup' %}" class="inline-link-primary">Sign Up</a>
             {% endif %}
         </div>
 
-        <ul>
-            {% for story in stories %}
-                <li>
-                    <strong>{{ story.title }}</strong>
+        <div class="page-card">
+            <h1 class="page-title">{% if view_mode == 'author' %}Author Dashboard{% else %}Available Stories{% endif %}</h1>
+
+            <div class="search-panel">
+                <form method="get" action="." class="search-form">
+                    <input
+                        type="text"
+                        name="search"
+                        placeholder="Search by title..."
+                        value="{{ search_query }}"
+                        class="text-input search-input"
+                    >
+
                     {% if view_mode == 'author' %}
-                        <span style="font-size: 0.8em; padding: 3px 8px; border-radius: 5px; background: {% if story.status == 'published' %}#e8f5e9; color: #2e7d32;{% elif story.status == 'draft' %}#fff3e0; color: #ef6c00;{% else %}#ffebee; color: #c62828;{% endif %}">
-                            {{ story.status|upper }}
-                        </span>
-                    {% endif %}
-                    <br>
-                    {{ story.description }}<br>
-                    
-                    <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-                        <span style="display: inline-flex; align-items: center; background: #fff9e6; color: #f39c12; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.9em; border: 1px solid #ffeeba;">
-                            {% if story.avg_rating > 0 %}
-                                <span style="margin-right: 4px;">&#9733;</span> {{ story.avg_rating }}
-                            {% else %}
-                                <span style="margin-right: 4px; color: #ccc;">&#9734;</span> New
-                            {% endif %}
-                        </span>
-                        {% if story.rating_count > 0 %}
-                            <span style="color: #888; font-size: 0.85em;">({{ story.rating_count }} review{{ story.rating_count|pluralize }})</span>
-                        {% endif %}
-                    </div>
-                    
-                    {% if story.resume_node %}
-                        <a href="{% url 'play_node' story.id story.resume_node %}" style="background: #66bb6a;">Resume</a>
-                        <a href="{% url 'start_story' story.id %}" style="background: #a7bfe8; margin-left: 5px;">Restart</a>
-                    {% else %}
-                        <a href="{% url 'start_story' story.id %}">Play</a>
+                    <select name="status" class="select-input">
+                        <option value="" {% if status_filter == '' %}selected{% endif %}>All Status</option>
+                        <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Published</option>
+                        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Drafts</option>
+                        <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+                    </select>
                     {% endif %}
 
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'report_story' story.id %}" style="background: #e67e22; margin-left: 5px;">Report</a>
-                    {% endif %}
-                    
-                    {% if view_mode == 'author' %}
-                        <a href="{% url 'edit_story' story.id %}" style="background: #5d5c7c; margin-left: 5px;">Edit</a>
-                        <a href="{% url 'delete_story' story.id %}" style="background: #e57373; margin-left: 5px;">Delete</a>
-                    {% endif %}
-                </li>
-            {% empty %}
-                <li class="empty-message">No stories found.</li>
-            {% endfor %}
-        </ul>
+                    <button type="submit" class="btn">Search</button>
+                    <a href="." class="btn btn-light">Reset</a>
+                </form>
+            </div>
+
+            <div class="toolbar-links">
+                {% if view_mode == 'author' %}
+                    <a href="{% url 'create_story' %}" class="btn">+ Create New Story</a>
+                    <a href="{% url 'story_list' %}" class="btn btn-secondary">Switch to Reader View</a>
+                {% else %}
+                    <a href="{% url 'author_dashboard' %}" class="btn btn-secondary">Author Tools</a>
+                {% endif %}
+                <a href="{% url 'global_stats' %}" class="btn btn-secondary">View Global Stats</a>
+                {% if user.is_staff %}
+                    <a href="{% url 'moderation_reports' %}" class="btn btn-secondary">Moderate Reports</a>
+                {% endif %}
+            </div>
+
+            <ul class="story-list">
+                {% for story in stories %}
+                    <li class="story-item">
+                        <h2 class="story-title">{{ story.title }}</h2>
+                        {% if view_mode == 'author' %}
+                            <span class="status-chip {% if story.status == 'published' %}is-published{% elif story.status == 'draft' %}is-draft{% else %}is-suspended{% endif %}">
+                                {{ story.status|upper }}
+                            </span>
+                        {% endif %}
+
+                        <p class="story-description">{{ story.description }}</p>
+
+                        <div class="rating-row">
+                            <span class="rating-pill">
+                                {% if story.avg_rating > 0 %}
+                                    <span class="rating-icon">&#9733;</span>{{ story.avg_rating }}
+                                {% else %}
+                                    <span class="rating-icon empty">&#9734;</span>New
+                                {% endif %}
+                            </span>
+                            {% if story.rating_count > 0 %}
+                                <span class="review-count">({{ story.rating_count }} review{{ story.rating_count|pluralize }})</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="story-actions">
+                            {% if story.resume_node %}
+                                <a href="{% url 'play_node' story.id story.resume_node %}" class="btn btn-success">Resume</a>
+                                <a href="{% url 'start_story' story.id %}" class="btn">Restart</a>
+                            {% else %}
+                                <a href="{% url 'start_story' story.id %}" class="btn">Play</a>
+                            {% endif %}
+
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'report_story' story.id %}" class="btn btn-warning">Report</a>
+                            {% endif %}
+
+                            {% if view_mode == 'author' %}
+                                <a href="{% url 'edit_story' story.id %}" class="btn btn-secondary">Edit</a>
+                                <a href="{% url 'delete_story' story.id %}" class="btn btn-danger">Delete</a>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="empty-message">No stories found.</li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 </body>
 </html>

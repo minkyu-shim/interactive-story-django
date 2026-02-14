@@ -1,10 +1,11 @@
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import StoryOwnership, StoryReport
+from .models import StoryOwnership, StoryRatingComment, StoryReport
 
 
 class StoryReportTests(TestCase):
@@ -261,3 +262,94 @@ class ChoiceRollTests(TestCase):
         response = self.client.post(self.url, {'choice_id': '4'})
         expected = reverse('play_node', kwargs={'story_id': self.story_id, 'node_id': self.node_id})
         self.assertRedirects(response, expected, fetch_redirect_response=False)
+
+
+class RatingSourceIsolationTests(TestCase):
+    def test_same_story_id_can_exist_for_different_sources(self):
+        user = User.objects.create_user(username='rating_user', password='pw123456')
+        StoryRatingComment.objects.create(
+            user=user,
+            story_id=42,
+            story_source='https://api-one.example',
+            rating=5,
+            comment='source one',
+        )
+        StoryRatingComment.objects.create(
+            user=user,
+            story_id=42,
+            story_source='https://api-two.example',
+            rating=3,
+            comment='source two',
+        )
+        self.assertEqual(StoryRatingComment.objects.filter(user=user, story_id=42).count(), 2)
+
+    def test_same_user_story_and_source_is_still_unique(self):
+        user = User.objects.create_user(username='rating_user2', password='pw123456')
+        StoryRatingComment.objects.create(
+            user=user,
+            story_id=42,
+            story_source='https://api-one.example',
+            rating=4,
+            comment='first',
+        )
+        with self.assertRaises(IntegrityError):
+            StoryRatingComment.objects.create(
+                user=user,
+                story_id=42,
+                story_source='https://api-one.example',
+                rating=2,
+                comment='duplicate',
+            )
+
+
+class PlayerNameDisplayTests(TestCase):
+    def setUp(self):
+        self.story_id = 321
+        self.start_url = reverse('start_story', kwargs={'story_id': self.story_id})
+        self.play_url = reverse('play_node', kwargs={'story_id': self.story_id, 'node_id': 'node_1'})
+
+    @patch('gameplay.views.get_story_details', return_value={'id': 321, 'title': 'Name Test Story'})
+    def test_start_story_get_renders_name_form(self, _mock_story):
+        response = self.client.get(self.start_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Player Name')
+        self.assertContains(response, 'value="user"', html=False)
+
+    @patch('gameplay.views.get_story_start', return_value={'id': 'node_1'})
+    def test_start_story_post_saves_player_name(self, _mock_start):
+        response = self.client.post(self.start_url, {'player_name': 'minkie'})
+        expected = reverse('play_node', kwargs={'story_id': self.story_id, 'node_id': 'node_1'})
+        self.assertRedirects(response, expected, fetch_redirect_response=False)
+        session = self.client.session
+        self.assertEqual(session.get('story_player_names', {}).get(str(self.story_id)), 'minkie')
+
+    @patch('gameplay.views.get_story_details', return_value={'id': 321, 'status': 'published'})
+    @patch('gameplay.views.get_node')
+    def test_play_node_replaces_alias_speakers_and_placeholders(self, mock_get_node, _mock_story):
+        session = self.client.session
+        session['story_player_names'] = {str(self.story_id): 'minkie'}
+        session.save()
+
+        mock_get_node.return_value = {
+            'id': 'node_1',
+            'type': 'dialogue',
+            'title': 'Hello {{player_name}}',
+            'content': [
+                {'speaker': 'Jin', 'text': 'Hi {{player_name}}!'},
+                {'speaker': 'User', 'text': 'Ready?'},
+                {'speaker': '진', 'text': '가자, {{player_name}}!'},
+            ],
+            'choices': [
+                {'id': 1, 'label': 'Help {{player_name}}', 'target_node': 'node_2'},
+            ],
+        }
+
+        response = self.client.get(self.play_url)
+        self.assertEqual(response.status_code, 200)
+        rendered_node = response.context['node']
+        self.assertEqual(rendered_node['title'], 'Hello minkie')
+        self.assertEqual(rendered_node['content'][0]['speaker'], 'minkie')
+        self.assertEqual(rendered_node['content'][1]['speaker'], 'minkie')
+        self.assertEqual(rendered_node['content'][2]['speaker'], 'minkie')
+        self.assertEqual(rendered_node['content'][0]['text'], 'Hi minkie!')
+        self.assertEqual(rendered_node['choices'][0]['label'], 'Help minkie')

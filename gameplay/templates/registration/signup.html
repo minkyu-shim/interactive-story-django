@@ -1,32 +1,24 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>NAHB - Sign Up</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f7f7f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        h1 { font-family: 'Playfair Display', serif; color: #5d5c7c; }
-        form p { text-align: left; margin-bottom: 15px; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .helptext { display: block; font-size: 0.8em; color: #777; margin-top: 5px; }
-        .btn { padding: 12px 25px; background: #619af3; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 1em; margin-top: 10px; }
-        .links { margin-top: 20px; font-size: 0.9em; }
-        .errorlist { color: #e57373; list-style: none; padding: 0; text-align: left; font-size: 0.85em; }
-    </style>
+    <link rel="stylesheet" href="{% static 'gameplay/css/app.css' %}">
 </head>
-<body>
-    <div class="container">
-        <h1>Create Account</h1>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn">Sign Up</button>
-        </form>
-        <div class="links">
-            Already have an account? <a href="{% url 'login' %}" style="color: #619af3; text-decoration: none;">Login here</a>
-            <br><br>
-            <a href="{% url 'story_list' %}" style="color: #5d5c7c; text-decoration: none;">&larr; Back to Stories</a>
+<body class="app-body auth-page">
+    <div class="page-wrap">
+        <div class="page-card narrow">
+            <h1 class="page-title">Create Account</h1>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn">Sign Up</button>
+            </form>
+            <div class="links">
+                Already have an account? <a href="{% url 'login' %}" class="inline-link-primary">Login here</a>
+                <br><br>
+                <a href="{% url 'story_list' %}" class="inline-link-secondary">&larr; Back to Stories</a>
+            </div>
         </div>
     </div>
 </body>

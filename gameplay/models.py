@@ -40,15 +40,16 @@ class PlaySession(models.Model):
 class StoryRatingComment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_comments')
     story_id = models.IntegerField()
+    story_source = models.CharField(max_length=255, db_index=True, default='')
     rating = models.PositiveSmallIntegerField(choices=[(i, str(i)) for i in range(1, 6)])
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'story_id')
+        unique_together = ('user', 'story_source', 'story_id')
 
     def __str__(self):
-        return f"{self.user.username} rated Story {self.story_id}: {self.rating}/5"
+        return f"{self.user.username} rated Story {self.story_id} [{self.story_source}]: {self.rating}/5"
 
 
 class StoryReport(models.Model):

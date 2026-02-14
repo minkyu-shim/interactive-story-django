@@ -1,7 +1,10 @@
 import logging
 import random
+import re
+from copy import deepcopy
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
@@ -20,6 +23,111 @@ from django.db.models import Count, Avg, Q
 
 logger = logging.getLogger(__name__)
 VALID_STORY_STATUSES = {'draft', 'published', 'suspended'}
+PLAYER_NAME_SESSION_KEY = 'story_player_names'
+PLAYER_NAME_PLACEHOLDERS = (
+    '{{player_name}}',
+    '{player_name}',
+    '[[player_name]]',
+    '<player_name>',
+)
+PLAYER_SPEAKER_ALIASES = {'user', 'jin', '진'}
+
+
+def _current_story_source():
+    return (getattr(settings, 'FLASK_BASE_URL', '') or '').rstrip('/')
+
+
+def _default_player_name(request):
+    return 'user'
+
+
+def _normalize_player_name(raw_name, fallback='user'):
+    normalized = re.sub(r'\s+', ' ', (raw_name or '').strip())
+    if not normalized:
+        return fallback
+    normalized = ''.join(ch for ch in normalized if ch.isalnum() or ch in " _-'.")
+    normalized = re.sub(r'\s+', ' ', normalized).strip()
+    if not normalized:
+        return fallback
+    return normalized[:30].strip() or fallback
+
+
+def _story_name_map(request):
+    names = request.session.get(PLAYER_NAME_SESSION_KEY, {})
+    return names if isinstance(names, dict) else {}
+
+
+def _player_name_for_story(request, story_id):
+    names = _story_name_map(request)
+    default_name = _default_player_name(request)
+    return names.get(str(story_id)) or default_name
+
+
+def _set_player_name_for_story(request, story_id, player_name):
+    names = _story_name_map(request)
+    names[str(story_id)] = player_name
+    request.session[PLAYER_NAME_SESSION_KEY] = names
+    request.session.modified = True
+
+
+def _replace_player_name_tokens(value, player_name):
+    if not isinstance(value, str):
+        return value
+    replaced = value
+    for placeholder in PLAYER_NAME_PLACEHOLDERS:
+        replaced = replaced.replace(placeholder, player_name)
+    return replaced
+
+
+def _speaker_is_player_alias(value):
+    if not isinstance(value, str):
+        return False
+    speaker = value.strip()
+    if not speaker:
+        return False
+    return speaker.casefold() in PLAYER_SPEAKER_ALIASES
+
+
+def _inject_player_name(node_data, player_name):
+    rendered = deepcopy(node_data)
+
+    for text_key in ('title', 'text', 'ending_label', 'outcome'):
+        rendered[text_key] = _replace_player_name_tokens(rendered.get(text_key), player_name)
+
+    for list_key in ('dialogue', 'content'):
+        lines = rendered.get(list_key)
+        if not isinstance(lines, list):
+            continue
+        updated_lines = []
+        for line in lines:
+            if not isinstance(line, dict):
+                updated_lines.append(line)
+                continue
+            updated = dict(line)
+            updated_speaker = updated.get('speaker')
+            if _speaker_is_player_alias(updated_speaker):
+                updated['speaker'] = player_name
+            else:
+                updated['speaker'] = _replace_player_name_tokens(updated_speaker, player_name)
+            updated['text'] = _replace_player_name_tokens(updated.get('text'), player_name)
+            updated_lines.append(updated)
+        rendered[list_key] = updated_lines
+
+    choices = rendered.get('choices')
+    if isinstance(choices, list):
+        updated_choices = []
+        for choice in choices:
+            if not isinstance(choice, dict):
+                updated_choices.append(choice)
+                continue
+            updated = dict(choice)
+            updated['text'] = _replace_player_name_tokens(updated.get('text'), player_name)
+            updated['label'] = _replace_player_name_tokens(updated.get('label'), player_name)
+            updated['effect'] = _replace_player_name_tokens(updated.get('effect'), player_name)
+            updated_choices.append(updated)
+        rendered['choices'] = updated_choices
+
+    return rendered
 
 
 def story_list(request):
@@ -50,7 +158,11 @@ def story_list(request):
     resume_map = {story_id: node_id for story_id, node_id in active_sessions}
 
     # Add average ratings
-    rating_stats = StoryRatingComment.objects.values('story_id').annotate(avg_rating=Avg('rating'), count=Count('id'))
+    source = _current_story_source()
+    rating_stats = StoryRatingComment.objects.filter(story_source=source).values('story_id').annotate(
+        avg_rating=Avg('rating'),
+        count=Count('id'),
+    )
     rating_map = {item['story_id']: item for item in rating_stats}
 
     for story in stories:
@@ -108,7 +220,11 @@ def author_dashboard(request):
         ]
 
     # Add average ratings
-    rating_stats = StoryRatingComment.objects.values('story_id').annotate(avg_rating=Avg('rating'), count=Count('id'))
+    source = _current_story_source()
+    rating_stats = StoryRatingComment.objects.filter(story_source=source).values('story_id').annotate(
+        avg_rating=Avg('rating'),
+        count=Count('id'),
+    )
     rating_map = {item['story_id']: item for item in rating_stats}
 
     for story in stories:
@@ -128,12 +244,24 @@ def start_story(request, story_id):
     """Finds the start node and redirects to the play view."""
     if not request.session.session_key:
         request.session.create()
-    PlaySession.objects.filter(session_key=request.session.session_key, story_id=story_id).delete()
 
-    start_node = get_story_start(story_id)
-    if start_node:
-        return redirect('play_node', story_id=story_id, node_id=start_node['id'])
-    return redirect('story_list')
+    if request.method == 'POST':
+        fallback_name = _player_name_for_story(request, story_id)
+        chosen_name = _normalize_player_name(request.POST.get('player_name'), fallback=fallback_name)
+        _set_player_name_for_story(request, story_id, chosen_name)
+        PlaySession.objects.filter(session_key=request.session.session_key, story_id=story_id).delete()
+
+        start_node = get_story_start(story_id)
+        if start_node:
+            return redirect('play_node', story_id=story_id, node_id=start_node['id'])
+        return redirect('story_list')
+
+    story = get_story_details(story_id) or {}
+    return render(request, 'gameplay/start_story.html', {
+        'story_id': story_id,
+        'story_title': story.get('title', f'Story #{story_id}'),
+        'initial_player_name': _player_name_for_story(request, story_id),
+    })
 
 
 def play_node(request, story_id, node_id):
@@ -141,6 +269,8 @@ def play_node(request, story_id, node_id):
 
     if not node_data:
         return redirect('story_list')
+    player_name = _player_name_for_story(request, story_id)
+    node_data = _inject_player_name(node_data, player_name)
 
     if not request.session.session_key:
         request.session.create()
@@ -156,6 +286,7 @@ def play_node(request, story_id, node_id):
     story_details = get_story_details(story_id)
     is_preview = story_details.get('status') == 'draft' if story_details else False
 
+    source = _current_story_source()
     ratings_comments = []
     user_rating_form = None
     if is_actually_ending:
@@ -178,9 +309,16 @@ def play_node(request, story_id, node_id):
         PlaySession.objects.filter(session_key=session_key, story_id=story_id).delete()
 
         # Get ratings and comments
-        ratings_comments = StoryRatingComment.objects.filter(story_id=story_id).order_by('-created_at')
+        ratings_comments = StoryRatingComment.objects.filter(
+            story_source=source,
+            story_id=story_id,
+        ).order_by('-created_at')
         if request.user.is_authenticated:
-            existing_rating = StoryRatingComment.objects.filter(user=request.user, story_id=story_id).first()
+            existing_rating = StoryRatingComment.objects.filter(
+                user=request.user,
+                story_source=source,
+                story_id=story_id,
+            ).first()
             if existing_rating:
                 user_rating_form = StoryRatingCommentForm(instance=existing_rating)
             else:
@@ -196,6 +334,7 @@ def play_node(request, story_id, node_id):
     return render(request, 'gameplay/play_page.html', {
         'node': node_data,
         'story_id': story_id,
+        'player_name': player_name,
         'is_ending': is_actually_ending,
         'is_preview': is_preview,
         'ratings_comments': ratings_comments,
@@ -254,8 +393,13 @@ def choose_choice(request, story_id, node_id):
 
 @login_required
 def submit_rating_comment(request, story_id):
+    source = _current_story_source()
     if request.method == 'POST':
-        existing_rating = StoryRatingComment.objects.filter(user=request.user, story_id=story_id).first()
+        existing_rating = StoryRatingComment.objects.filter(
+            user=request.user,
+            story_source=source,
+            story_id=story_id,
+        ).first()
         if existing_rating:
             form = StoryRatingCommentForm(request.POST, instance=existing_rating)
         else:
@@ -265,6 +409,7 @@ def submit_rating_comment(request, story_id):
             rating_comment = form.save(commit=False)
             rating_comment.user = request.user
             rating_comment.story_id = story_id
+            rating_comment.story_source = source
             rating_comment.save()
 
     return redirect(request.META.get('HTTP_REFERER', 'story_list'))
