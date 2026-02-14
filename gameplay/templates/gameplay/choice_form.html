@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,6 +16,8 @@
         .roll-config { padding: 14px; border: 1px dashed #d8d8d8; border-radius: 10px; background: #fafbff; }
         .hint { color: #777; font-size: 0.88em; margin-top: 4px; }
     </style>
+    <link rel="stylesheet" href="{% static 'gameplay/css/theme.css' %}">
+    <script src="{% static 'gameplay/js/theme.js' %}"></script>
 </head>
 <body>
     <div class="container">

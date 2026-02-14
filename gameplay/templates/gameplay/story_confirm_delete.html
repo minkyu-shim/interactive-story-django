@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,6 +12,8 @@
         .btn-danger { background: #e57373; color: white; }
         .btn-secondary { background: #ddd; color: #333; }
     </style>
+    <link rel="stylesheet" href="{% static 'gameplay/css/theme.css' %}">
+    <script src="{% static 'gameplay/js/theme.js' %}"></script>
 </head>
 <body>
     <div class="container">
