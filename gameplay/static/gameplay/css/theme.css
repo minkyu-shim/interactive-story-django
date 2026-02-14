@@ -214,3 +214,131 @@
 [data-theme='dark'] #graph {
     background: linear-gradient(180deg, #0f1420 0%, #131a2b 100%) !important;
 }
+
+/* Mobile layout improvements shared across all templates */
+@media (max-width: 900px) {
+    body {
+        padding: 16px !important;
+    }
+
+    .container,
+    .card,
+    .page-card,
+    .play-page .story-container {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 20px !important;
+        margin: 0 !important;
+    }
+
+    .top-actions,
+    .filters,
+    .actions,
+    .toolbar,
+    .action-group,
+    .story-list-page .toolbar-links,
+    .story-list-page .story-actions,
+    .story-list-page .search-form {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+        align-items: stretch !important;
+    }
+
+    .play-page .report-row {
+        text-align: left !important;
+    }
+
+    .stats {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .layout {
+        grid-template-columns: 1fr !important;
+    }
+
+    table {
+        display: block;
+        width: 100% !important;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 640px) {
+    body {
+        padding: 12px !important;
+    }
+
+    h1 {
+        font-size: 1.75rem !important;
+    }
+
+    h2 {
+        font-size: 1.35rem !important;
+    }
+
+    .container,
+    .card,
+    .page-card,
+    .play-page .story-container {
+        padding: 16px !important;
+        border-radius: 12px !important;
+    }
+
+    .btn,
+    .back-link,
+    .actions .btn,
+    .top-actions .btn,
+    .toolbar .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .story-list-page .search-form > * {
+        width: 100% !important;
+    }
+
+    .story-list-page .search-form .select-input,
+    .story-list-page .search-input {
+        width: 100% !important;
+    }
+
+    .story-list-page .top-auth-bar {
+        justify-content: center !important;
+    }
+
+    .play-page .story-heading {
+        font-size: 1.65rem !important;
+    }
+
+    .play-page .ending-box {
+        padding: 18px !important;
+    }
+
+    .play-page .ending-box h1 {
+        font-size: 2rem !important;
+    }
+
+    .play-page .dialogue-box,
+    .play-page .story-text,
+    .play-page .choice-btn {
+        padding: 12px !important;
+        font-size: 1rem !important;
+    }
+
+    .story-edit-page .page-item {
+        padding: 16px !important;
+    }
+
+    .story-edit-page .choice-item {
+        margin-left: 0 !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    #graph {
+        min-height: 320px !important;
+        height: 48vh !important;
+    }
+}
