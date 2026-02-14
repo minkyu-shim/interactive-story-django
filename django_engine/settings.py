@@ -27,17 +27,33 @@ def env_bool(name, default=False):
     return value.strip().lower() in {'1', 'true', 'yes', 'on'}
 
 
+def _normalize_host(value):
+    host = (value or '').strip()
+    if not host:
+        return ''
+    if host.startswith('http://'):
+        host = host[len('http://'):]
+    elif host.startswith('https://'):
+        host = host[len('https://'):]
+    host = host.split('/', 1)[0].strip()
+    return host
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-dev-only-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool('DJANGO_DEBUG', False)
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-    if host.strip()
-]
+ALLOWED_HOSTS = []
+for raw_host in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,.onrender.com').split(','):
+    host = _normalize_host(raw_host)
+    if host and host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host)
+
+render_host = _normalize_host(os.getenv('RENDER_EXTERNAL_HOSTNAME', ''))
+if render_host and render_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_host)
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
