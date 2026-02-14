@@ -15,26 +15,30 @@
 </head>
 <body>
     <div class="container">
-        <h1>Add Choice</h1>
-        <p>Adding choice to Page #{{ page_id }}</p>
+        <h1>{{ action|default:"Add" }} Choice</h1>
+        <p style="color: #888;">For Node #{{ page_id }}</p>
         <form method="post">
             {% csrf_token %}
             <div>
-                <label>Choice Text</label>
-                <input type="text" name="text" required placeholder="What should the player see?">
+                <label>Choice Text (Label)</label>
+                <input type="text" name="text" value="{{ choice.text|default:'' }}" required placeholder="e.g. 'Open the door' or 'Run away'">
             </div>
             <div>
-                <label>Next Page</label>
+                <label>Target Node (Where does this lead?)</label>
                 <select name="next_page_id" required>
-                    <option value="">-- Select Destination Page --</option>
-                    {% for page in pages %}
-                        <option value="{{ page.id }}">Page {{ page.id }}: {{ page.text|truncatewords:10 }}</option>
+                    <option value="">-- Select Destination --</option>
+                    {% for p in pages %}
+                        <option value="{{ p.id }}" {% if choice.next_page_id == p.id %}selected{% endif %}>
+                            Node #{{ p.id }}: {{ p.text|truncatewords:8 }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
-            <button type="submit" class="btn">Add Choice</button>
+            <button type="submit" class="btn">{{ action|default:"Save" }} Choice</button>
         </form>
-        <p style="text-align: center;"><a href="{% url 'edit_story' story_id %}" style="color: #619af3; text-decoration: none;">Cancel</a></p>
+        <p style="text-align: center; margin-top: 20px;">
+            <a href="{% url 'edit_story' story_id %}" style="color: #888; text-decoration: none;">Cancel</a>
+        </p>
     </div>
 </body>
 </html>

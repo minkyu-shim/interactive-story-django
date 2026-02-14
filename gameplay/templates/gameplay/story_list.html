@@ -156,6 +156,19 @@
                     <br>
                     {{ story.description }}<br>
                     
+                    <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+                        <span style="display: inline-flex; align-items: center; background: #fff9e6; color: #f39c12; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.9em; border: 1px solid #ffeeba;">
+                            {% if story.avg_rating > 0 %}
+                                <span style="margin-right: 4px;">&#9733;</span> {{ story.avg_rating }}
+                            {% else %}
+                                <span style="margin-right: 4px; color: #ccc;">&#9734;</span> New
+                            {% endif %}
+                        </span>
+                        {% if story.rating_count > 0 %}
+                            <span style="color: #888; font-size: 0.85em;">({{ story.rating_count }} review{{ story.rating_count|pluralize }})</span>
+                        {% endif %}
+                    </div>
+                    
                     {% if story.resume_node %}
                         <a href="{% url 'play_node' story.id story.resume_node %}" style="background: #66bb6a;">Resume</a>
                         <a href="{% url 'start_story' story.id %}" style="background: #a7bfe8; margin-left: 5px;">Restart</a>

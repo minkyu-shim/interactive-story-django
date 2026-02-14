@@ -82,6 +82,13 @@
                 <label for="description">Description</label>
                 <textarea id="description" name="description" rows="4" required>{{ story.description }}</textarea>
             </div>
+            <div>
+                <label for="status">Status</label>
+                <select id="status" name="status" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+                    <option value="draft" selected>Draft</option>
+                    <option value="published">Published</option>
+                </select>
+            </div>
             <button type="submit">{{ action }} Story</button>
         </form>
         <a href="{% url 'story_list' %}" class="back-link">Back to List</a>

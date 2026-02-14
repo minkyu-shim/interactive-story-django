@@ -9,7 +9,8 @@ class Play(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} - Story {self.story_id} ended at {self.ending_node_id}"
+        username = self.user.username if self.user_id else "Anonymous"
+        return f"{username} - Story {self.story_id} ended at {self.ending_node_id}"
 
 
 class StoryOwnership(models.Model):
@@ -34,3 +35,17 @@ class PlaySession(models.Model):
 
     def __str__(self):
         return f"Session {self.session_key} - Story {self.story_id} at {self.current_node_id}"
+
+
+class StoryRatingComment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_comments')
+    story_id = models.IntegerField()
+    rating = models.PositiveSmallIntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'story_id')
+
+    def __str__(self):
+        return f"{self.user.username} rated Story {self.story_id}: {self.rating}/5"

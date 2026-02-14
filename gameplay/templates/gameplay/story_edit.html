@@ -39,81 +39,175 @@
             border-bottom: 1px solid #eee;
         }
         .page-item {
-            background: #fcfcfc;
-            border: 1px solid #e8e8e8;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            position: relative;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .start-badge {
+            background: #66bb6a;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 10px;
         }
         .choice-item {
-            background: #fff;
+            background: #f9f9fb;
+            border: 1px solid #eee;
             border-left: 4px solid #619af3;
-            padding: 10px;
+            padding: 12px 15px;
             margin-top: 10px;
             margin-left: 20px;
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .btn {
-            display: inline-block;
-            padding: 8px 15px;
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
             background: #619af3;
             color: white;
             text-decoration: none;
             border-radius: 6px;
             font-size: 0.9em;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s;
         }
+        .btn:hover { opacity: 0.9; }
+        .btn-sm { padding: 4px 10px; font-size: 0.8em; }
         .btn-secondary { background: #5d5c7c; }
         .btn-success { background: #66bb6a; }
+        .btn-danger { background: #e57373; }
+        .btn-outline { background: transparent; border: 1px solid #ddd; color: #666; }
+        .btn-outline:hover { background: #f5f5f5; }
+        
+        .action-group { display: flex; gap: 8px; }
         
         form div { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; }
-        input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #5d5c7c; }
+        input[type="text"], textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Edit Story: {{ story.title }}</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Story Builder</h1>
+            <a href="{% url 'story_list' %}" class="btn btn-outline">&larr; Exit Editor</a>
+        </div>
         
         <div class="section">
             <form method="post">
                 {% csrf_token %}
-                <div>
-                    <label>Title</label>
-                    <input type="text" name="title" value="{{ story.title }}" required>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <label>Story Title</label>
+                        <input type="text" name="title" value="{{ story.title }}" required>
+                    </div>
+                    <div>
+                        <label>Status</label>
+                        <select name="status" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                            <option value="draft" {% if story.status == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="published" {% if story.status == 'published' %}selected{% endif %}>Published</option>
+                            <option value="suspended" {% if story.status == 'suspended' %}selected{% endif %}>Suspended</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label>Description</label>
-                    <textarea name="description" rows="3" required>{{ story.description }}</textarea>
+                    <textarea name="description" rows="2" required>{{ story.description }}</textarea>
                 </div>
-                <button type="submit" class="btn">Update Details</button>
+                <button type="submit" class="btn">Save Story Info</button>
             </form>
         </div>
 
         <div class="section">
-            <h2>Pages (Scenes)</h2>
-            <a href="{% url 'add_page' story.id %}" class="btn btn-success" style="margin-bottom: 20px;">+ Add New Page</a>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Adventure Nodes (Pages)</h2>
+                <a href="{% url 'add_page' story.id %}" class="btn btn-success">+ Add New Node</a>
+            </div>
             
             {% for page in story.pages %}
                 <div class="page-item">
-                    <strong>ID: {{ page.id }}</strong> 
-                    {% if page.is_ending %}<span style="color: #e57373;">(Ending: {{ page.ending_label }})</span>{% endif %}
-                    <p>{{ page.text|truncatewords:20 }}</p>
-                    
-                    <div style="margin-top: 10px;">
-                        <a href="{% url 'add_choice' story.id page.id %}" class="btn btn-secondary">Add Choice</a>
+                    <div class="page-header">
+                        <div>
+                            <strong>#{{ page.id|default:"Unknown" }}</strong>
+                            {% if forloop.first %}<span class="start-badge">START NODE</span>{% endif %}
+                            {% if page.is_ending %}
+                                <span style="background: #ffebee; color: #c62828; padding: 2px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; margin-left: 10px;">
+                                    ENDING: {{ page.ending_label|default:"The End" }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="action-group">
+                            {% if page.id %}
+                                <a href="{% url 'edit_page' story.id page.id %}" class="btn btn-sm btn-secondary">Edit</a>
+                                <form action="{% url 'delete_page' story.id page.id %}" method="post" style="margin:0;" onsubmit="return confirm('Delete this page and all its choices?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                </form>
+                            {% endif %}
+                        </div>
                     </div>
                     
-                    {% for choice in page.choices %}
-                        <div class="choice-item">
-                            "{{ choice.text }}" &rarr; Page {{ choice.next_page_id }}
+                    <p style="background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #f0f0f0; color: #555; font-style: italic;">
+                        "{{ page.text|truncatewords:50 }}"
+                    </p>
+                    
+                    <div style="margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-weight: bold; font-size: 0.9em; color: #7a7a90;">PLAYER CHOICES</span>
+                            {% if not page.is_ending and page.id %}
+                                <a href="{% url 'add_choice' story.id page.id %}" class="btn btn-sm btn-outline">+ Add Choice</a>
+                            {% endif %}
                         </div>
-                    {% endfor %}
+                        
+                        {% for choice in page.choices %}
+                            <div class="choice-item">
+                                <span>
+                                    <strong style="color: #619af3;">"{{ choice.text }}"</strong> 
+                                    <span style="color: #888; margin: 0 10px;">&rarr;</span> 
+                                    <span style="font-size: 0.9em; color: #555;">Leads to Node #{{ choice.next_page_id }}</span>
+                                </span>
+                                <div class="action-group">
+                                    {% if page.id %}
+                                    <a href="{% url 'edit_choice' story.id page.id choice.id %}" class="btn btn-sm btn-outline" style="padding: 2px 8px;">Edit</a>
+                                    {% endif %}
+                                    <form action="{% url 'delete_choice' story.id choice.id %}" method="post" style="margin:0;" onsubmit="return confirm('Remove this choice?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline" style="padding: 2px 8px; color: #e57373;">&times;</button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% empty %}
+                            {% if not page.is_ending %}
+                                <p style="font-size: 0.85em; color: #999; margin-left: 20px;">No choices yet. This node is currently a dead end.</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
             {% empty %}
-                <p>No pages yet. Create the first one!</p>
+                <div style="text-align: center; padding: 40px; background: #f9f9fb; border-radius: 12px; border: 2px dashed #ddd;">
+                    <p style="color: #7a7a90; margin-bottom: 20px;">Your adventure is empty. Start by creating the first scene!</p>
+                    <a href="{% url 'add_page' story.id %}" class="btn btn-success">Create the First Node</a>
+                </div>
             {% endfor %}
         </div>
-        
-        <a href="{% url 'story_list' %}" style="color: #619af3; text-decoration: none;">&larr; Back to Story List</a>
     </div>
 </body>
 </html>

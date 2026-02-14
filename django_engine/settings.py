@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -19,15 +20,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
+def env_bool(name, default=False):
+    value = os.getenv(name, str(default))
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-be9dy)q)0nw(m=-!0k7q7^w2o4za=mn@_&k6@p-#uwkr&1ay#c'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-dev-only-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool('DJANGO_DEBUG', False)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    if host.strip()
+]
 
-CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com']
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        'DJANGO_CSRF_TRUSTED_ORIGINS',
+        'https://*.onrender.com',
+    ).split(',')
+    if origin.strip()
+]
 
 
 # Application definition
@@ -127,4 +144,7 @@ LOGIN_REDIRECT_URL = 'story_list'
 LOGOUT_REDIRECT_URL = 'story_list'
 
 # Level 16: API Security
-FLASK_API_KEY = "my-super-secret-api-key"
+FLASK_BASE_URL = os.getenv('FLASK_BASE_URL', 'https://interactive-story-api-dylv.onrender.com').rstrip('/')
+FLASK_API_KEY = os.getenv('FLASK_API_KEY', '')
+FLASK_REQUEST_TIMEOUT = float(os.getenv('FLASK_REQUEST_TIMEOUT', '10'))
+WAKE_UP_FLASK_ON_STARTUP = env_bool('WAKE_UP_FLASK_ON_STARTUP', True)

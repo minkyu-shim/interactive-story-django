@@ -166,6 +166,154 @@
                 <a href="{% url 'story_list' %}" class="btn">Back to Menu</a>
             </div>
 
+            <hr>
+
+            <div class="ratings-comments">
+                <h3>Ratings & Comments</h3>
+                
+                {% if user.is_authenticated %}
+                    <div class="rating-form">
+                        <h4>Leave your feedback</h4>
+                        <form method="post" action="{% url 'submit_rating_comment' story_id=story_id %}" id="rating-form">
+                            {% csrf_token %}
+                            <div class="star-rating" id="star-selector">
+                                <span class="star" data-value="1">&#9733;</span>
+                                <span class="star" data-value="2">&#9733;</span>
+                                <span class="star" data-value="3">&#9733;</span>
+                                <span class="star" data-value="4">&#9733;</span>
+                                <span class="star" data-value="5">&#9733;</span>
+                            </div>
+                            {{ user_rating_form.rating }}
+                            <div class="comment-area">
+                                {{ user_rating_form.comment }}
+                            </div>
+                            <button type="submit" class="btn">Submit Rating</button>
+                        </form>
+                    </div>
+                {% else %}
+                    <p><a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to leave a rating and comment.</p>
+                {% endif %}
+
+                <div class="existing-comments">
+                    <h4>What others said:</h4>
+                    {% for item in ratings_comments %}
+                        <div class="comment-item">
+                            <div class="comment-header">
+                                <strong>{{ item.user.username }}</strong> 
+                                <span class="stars-display">
+                                    {% for i in "12345" %}
+                                        <span class="{% if forloop.counter <= item.rating %}filled{% endif %}">&#9733;</span>
+                                    {% endfor %}
+                                </span>
+                                <small>{{ item.created_at|date:"F j, Y" }}</small>
+                            </div>
+                            <div class="comment-text">
+                                {{ item.comment }}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p>No comments yet. Be the first to share your thoughts!</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <style>
+                .ratings-comments {
+                    margin-top: 40px;
+                }
+                .rating-form {
+                    background: #ffffff;
+                    padding: 25px;
+                    border-radius: 12px;
+                    margin-bottom: 30px;
+                    border: 1px solid #e0e0e0;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                }
+                .star-rating {
+                    font-size: 2em;
+                    cursor: pointer;
+                    margin-bottom: 15px;
+                    display: inline-block;
+                }
+                .star-rating .star {
+                    color: #ddd;
+                    transition: color 0.2s;
+                }
+                .star-rating .star.hover,
+                .star-rating .star.selected {
+                    color: #f39c12;
+                }
+                .stars-display {
+                    color: #ddd;
+                    margin: 0 10px;
+                }
+                .stars-display .filled {
+                    color: #f39c12;
+                }
+                .comment-area textarea {
+                    width: 100%;
+                    border-radius: 8px;
+                    border: 1px solid #e0e0e0;
+                    padding: 15px;
+                    font-family: inherit;
+                    box-sizing: border-box;
+                    margin: 10px 0;
+                    font-size: 1em;
+                    resize: vertical;
+                }
+                .comment-item {
+                    border-bottom: 1px solid #eee;
+                    padding: 20px 0;
+                }
+                .comment-header {
+                    margin-bottom: 8px;
+                    display: flex;
+                    align-items: center;
+                }
+                .comment-header small {
+                    color: #888;
+                    margin-left: auto;
+                }
+                .comment-text {
+                    color: #4a4a60;
+                    line-height: 1.5;
+                }
+            </style>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const stars = document.querySelectorAll('#star-selector .star');
+                    const ratingInput = document.querySelector('input[name="rating"]');
+                    let currentRating = parseInt(ratingInput.value) || 0;
+
+                    function updateStars(val, type) {
+                        stars.forEach(s => {
+                            const starVal = parseInt(s.getAttribute('data-value'));
+                            if (type === 'hover') {
+                                s.classList.toggle('hover', starVal <= val);
+                            } else if (type === 'select') {
+                                s.classList.toggle('selected', starVal <= val);
+                            }
+                        });
+                    }
+
+                    // Initialize
+                    if (currentRating > 0) {
+                        updateStars(currentRating, 'select');
+                    }
+
+                    stars.forEach(star => {
+                        star.addEventListener('mouseover', () => updateStars(parseInt(star.getAttribute('data-value')), 'hover'));
+                        star.addEventListener('mouseout', () => updateStars(0, 'hover'));
+                        star.addEventListener('click', () => {
+                            currentRating = parseInt(star.getAttribute('data-value'));
+                            ratingInput.value = currentRating;
+                            updateStars(currentRating, 'select');
+                        });
+                    });
+                });
+            </script>
+
         {% else %}
 
             {% if node.text and node.type != 'dialogue' and not node.content %}

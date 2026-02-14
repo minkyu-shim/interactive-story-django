@@ -15,25 +15,35 @@
 </head>
 <body>
     <div class="container">
-        <h1>Add New Page</h1>
+        <h1>{{ action|default:"Add" }} Node</h1>
         <form method="post">
             {% csrf_token %}
             <div>
-                <label>Page Text</label>
-                <textarea name="text" rows="5" required placeholder="Describe the scene..."></textarea>
+                <label>Node Content (Text)</label>
+                <textarea name="text" rows="8" required placeholder="What happens in this scene?">{{ page.text }}</textarea>
             </div>
-            <div>
-                <label>
-                    <input type="checkbox" name="is_ending"> Is this an ending?
+            <div style="background: #f9f9fb; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" name="is_ending" style="width: auto;" {% if page.is_ending %}checked{% endif %}> 
+                    <span>Is this an ending?</span>
                 </label>
+                <p style="font-size: 0.85em; color: #888; margin: 10px 0 5px 25px;">If checked, no choices can be added to this node.</p>
             </div>
-            <div>
-                <label>Ending Label (e.g. "The Victory", "The Defeat")</label>
-                <input type="text" name="ending_label" placeholder="Optional">
+            <div id="ending_label_div" style="margin-top: 15px; display: {% if page.is_ending %}block{% else %}none{% endif %};">
+                <label>Ending Label (e.g. "Game Over", "Victory!")</label>
+                <input type="text" name="ending_label" value="{{ page.ending_label|default:'' }}" placeholder="Optional label for the ending screen">
             </div>
-            <button type="submit" class="btn">Create Page</button>
+            <button type="submit" class="btn" style="margin-top: 20px;">{{ action|default:"Create" }} Node</button>
         </form>
-        <p style="text-align: center;"><a href="{% url 'edit_story' story_id %}" style="color: #619af3; text-decoration: none;">Cancel</a></p>
+        <p style="text-align: center; margin-top: 20px;">
+            <a href="{% url 'edit_story' story_id %}" style="color: #888; text-decoration: none;">Cancel and go back</a>
+        </p>
     </div>
+
+    <script>
+        document.querySelector('input[name="is_ending"]').addEventListener('change', function() {
+            document.getElementById('ending_label_div').style.display = this.checked ? 'block' : 'none';
+        });
+    </script>
 </body>
 </html>
