@@ -739,6 +739,7 @@ def add_page_view(request, story_id):
         text = request.POST.get('text')
         is_ending = request.POST.get('is_ending') == 'on'
         ending_label = request.POST.get('ending_label')
+        illustration_url = (request.POST.get('illustration_url') or '').strip() or None
 
         import uuid
         data = {
@@ -746,7 +747,8 @@ def add_page_view(request, story_id):
             'custom_id': f"node_{uuid.uuid4().hex[:8]}", # Add a custom_id
             'text': text,
             'is_ending': is_ending,
-            'ending_label': ending_label if is_ending else None
+            'ending_label': ending_label if is_ending else None,
+            'illustration_url': illustration_url,
         }
 
         create_page(story_id, data)
@@ -812,11 +814,13 @@ def edit_page_view(request, story_id, page_id):
         text = request.POST.get('text')
         is_ending = request.POST.get('is_ending') == 'on'
         ending_label = request.POST.get('ending_label')
+        illustration_url = (request.POST.get('illustration_url') or '').strip() or None
 
         data = {
             'text': text,
             'is_ending': is_ending,
-            'ending_label': ending_label if is_ending else None
+            'ending_label': ending_label if is_ending else None,
+            'illustration_url': illustration_url,
         }
 
         update_page(page_id, data)

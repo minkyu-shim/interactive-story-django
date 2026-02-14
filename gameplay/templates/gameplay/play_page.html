@@ -47,6 +47,20 @@
             color: #4a4a60;
             box-shadow: 0 2px 10px rgba(0,0,0,0.03); /* Very light shadow */
         }
+        .illustration-frame {
+            margin-bottom: 22px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e3e7f2;
+            background: #f5f8ff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+        .illustration-frame img {
+            display: block;
+            width: 100%;
+            max-height: 420px;
+            object-fit: cover;
+        }
         .dialogue-box strong {
             color: #6a68a6; /* Softer color for speaker names */
             font-weight: 700;
@@ -195,6 +209,17 @@
         {% endif %}
 
         <h2>{{ node.title }}</h2>
+
+        {% if node.illustration_url %}
+            <div class="illustration-frame" id="node-illustration-frame">
+                <img
+                    src="{{ node.illustration_url }}"
+                    alt="Scene illustration"
+                    loading="lazy"
+                    onerror="var frame=document.getElementById('node-illustration-frame'); if(frame){frame.style.display='none';}"
+                >
+            </div>
+        {% endif %}
 
         {% if is_ending %}
 

@@ -11,6 +11,9 @@
         label { display: block; margin-bottom: 8px; font-weight: bold; }
         textarea, input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         .btn { padding: 12px 25px; background: #619af3; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 1em; }
+        .hint { color: #888; font-size: 0.85em; margin-top: 6px; }
+        .preview-wrap { margin-top: 10px; }
+        .preview-wrap img { max-width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; border: 1px solid #e8e8e8; }
     </style>
 </head>
 <body>
@@ -21,6 +24,16 @@
             <div>
                 <label>Node Content (Text)</label>
                 <textarea name="text" rows="8" required placeholder="What happens in this scene?">{{ page.text }}</textarea>
+            </div>
+            <div>
+                <label>Illustration URL (Optional)</label>
+                <input type="text" name="illustration_url" value="{{ page.illustration_url|default:'' }}" placeholder="https://... or /static/...">
+                <p class="hint">Accepted prefixes: http://, https://, /static/</p>
+                {% if page.illustration_url %}
+                    <div class="preview-wrap">
+                        <img src="{{ page.illustration_url }}" alt="Illustration preview" loading="lazy">
+                    </div>
+                {% endif %}
             </div>
             <div style="background: #f9f9fb; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
                 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
