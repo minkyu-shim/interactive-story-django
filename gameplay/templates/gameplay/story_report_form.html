@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report Story</title>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.6;
+            color: #3f3e53;
+            background-color: #f7f7f9;
+            margin: 0;
+            padding: 30px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        }
+        h1 {
+            margin-top: 0;
+            color: #5d5c7c;
+        }
+        .muted {
+            color: #666;
+            margin-bottom: 18px;
+        }
+        .alert {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 6px;
+            font-weight: 600;
+        }
+        select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d8d8d8;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 1em;
+        }
+        .errorlist {
+            color: #b00020;
+            margin: 6px 0;
+            padding-left: 18px;
+        }
+        .actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            color: #fff;
+            background: #e67e22;
+        }
+        .btn-secondary {
+            background: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Report Story</h1>
+        <p class="muted">
+            Reporting: <strong>{{ story_title }}</strong> (ID {{ story_id }})
+        </p>
+
+        {% if existing_report %}
+            <div class="alert">
+                You already submitted a report for this story. Sending again will update it.
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <label for="{{ form.reason.id_for_label }}">Reason</label>
+            {{ form.reason }}
+            {{ form.reason.errors }}
+
+            <label for="{{ form.details.id_for_label }}">Details (optional)</label>
+            {{ form.details }}
+            {{ form.details.errors }}
+
+            <div class="actions">
+                <button type="submit" class="btn">Submit Report</button>
+                <a href="{% url 'story_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

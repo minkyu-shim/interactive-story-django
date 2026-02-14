@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report Moderation</title>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.5;
+            color: #3f3e53;
+            background: #f7f7f9;
+            margin: 0;
+            padding: 24px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+        }
+        h1 {
+            margin: 0 0 16px;
+            color: #5d5c7c;
+        }
+        .top-actions {
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 14px;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            background: #5d5c7c;
+            font-size: 0.95em;
+        }
+        .btn-save {
+            background: #2c7a7b;
+        }
+        .filters {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filters input, .filters select {
+            padding: 8px 10px;
+            border: 1px solid #d0d0d0;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        .messages {
+            margin: 10px 0 16px;
+        }
+        .message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid transparent;
+        }
+        .message.success {
+            background: #e8f7ef;
+            border-color: #8cd3a7;
+        }
+        .message.error {
+            background: #fdecec;
+            border-color: #f1a7a7;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ececec;
+            vertical-align: top;
+            text-align: left;
+        }
+        th {
+            color: #5d5c7c;
+            font-size: 0.92em;
+            background: #fafafe;
+        }
+        .details {
+            max-width: 280px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #505066;
+            font-size: 0.92em;
+        }
+        .tiny {
+            color: #7c7c95;
+            font-size: 0.82em;
+        }
+        .moderation-form select,
+        .moderation-form textarea {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #d0d0d0;
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-family: inherit;
+            font-size: 0.9em;
+        }
+        .moderation-form textarea {
+            margin-top: 6px;
+            min-height: 58px;
+            resize: vertical;
+        }
+        .no-data {
+            margin-top: 16px;
+            padding: 16px;
+            border: 1px dashed #ccc;
+            border-radius: 10px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Report Moderation</h1>
+        <div class="top-actions">
+            <div>
+                Review and update user-submitted story reports.
+            </div>
+            <a href="{% url 'story_list' %}" class="btn">Back to Stories</a>
+        </div>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message {{ message.tags|default:'success' }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="get" class="filters">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search user/story/details">
+            <select name="status">
+                <option value="">All statuses</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <select name="reason">
+                <option value="">All reasons</option>
+                {% for value, label in reason_choices %}
+                    <option value="{{ value }}" {% if reason_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn">Apply</button>
+            <a href="{% url 'moderation_reports' %}" class="btn">Reset</a>
+        </form>
+
+        {% if report_rows %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Story</th>
+                        <th>Reporter</th>
+                        <th>Reason</th>
+                        <th>Details</th>
+                        <th>Created</th>
+                        <th>Moderation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_rows %}
+                        {% with report=row.report form=row.form %}
+                        <tr>
+                            <td>#{{ report.id }}</td>
+                            <td>
+                                <div><strong>{{ report.story_title_snapshot|default:"(No title snapshot)" }}</strong></div>
+                                <div class="tiny">Story ID: {{ report.story_id }}</div>
+                            </td>
+                            <td>{{ report.user.username }}</td>
+                            <td>{{ report.get_reason_display }}</td>
+                            <td class="details">{{ report.details|default:"-" }}</td>
+                            <td>
+                                <div>{{ report.created_at|date:"Y-m-d H:i" }}</div>
+                                <div class="tiny">Updated: {{ report.updated_at|date:"Y-m-d H:i" }}</div>
+                                {% if report.resolved_at %}
+                                    <div class="tiny">Resolved: {{ report.resolved_at|date:"Y-m-d H:i" }}</div>
+                                    <div class="tiny">By: {{ report.resolved_by.username|default:"-" }}</div>
+                                {% endif %}
+                            </td>
+                            <td style="min-width: 250px;">
+                                <form method="post" action="{% url 'moderation_report_update' report.id %}" class="moderation-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    {{ form.status }}
+                                    {{ form.admin_note }}
+                                    <button type="submit" class="btn btn-save">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="no-data">No reports match this filter.</div>
+        {% endif %}
+    </div>
+</body>
+</html>

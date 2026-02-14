@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Story Graph - {{ story.title }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap');
+
+        :root {
+            --bg: #f4f6fb;
+            --card: #ffffff;
+            --ink: #2f3144;
+            --muted: #6c718d;
+            --line: #dde2ef;
+            --primary: #4f72d9;
+            --start: #2f9e44;
+            --ending: #c92a2a;
+            --unreachable: #868e96;
+            --missing: #f08c00;
+        }
+        body {
+            margin: 0;
+            padding: 24px;
+            background: radial-gradient(circle at top right, #e9edfb 0%, var(--bg) 45%);
+            color: var(--ink);
+            font-family: 'Noto Sans KR', sans-serif;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        h1 {
+            margin: 0;
+            font-family: 'Playfair Display', serif;
+            color: #44466d;
+        }
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn {
+            display: inline-block;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .btn.alt {
+            background: #5f647c;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .stat {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .stat .value {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        .stat .label {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 3fr) minmax(290px, 1fr);
+            gap: 12px;
+        }
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        #graph {
+            width: 100%;
+            height: 68vh;
+            min-height: 520px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+        }
+        .sidebar {
+            padding: 14px;
+        }
+        .sidebar h2 {
+            margin: 0 0 8px 0;
+            font-family: 'Playfair Display', serif;
+            color: #4e5272;
+        }
+        .legend {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        .swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid #555;
+            flex-shrink: 0;
+        }
+        .swatch.start { background: var(--start); border-color: var(--start); }
+        .swatch.ending { background: var(--ending); border-color: var(--ending); }
+        .swatch.unreachable { background: var(--unreachable); border-color: var(--unreachable); }
+        .swatch.normal { background: var(--primary); border-color: var(--primary); }
+        .swatch.missing { background: var(--missing); border-color: var(--missing); }
+        .info-box {
+            border: 1px dashed #cfd5e6;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 0.9rem;
+            background: #fbfcff;
+        }
+        .control-box {
+            border: 1px solid #dde4f2;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 14px;
+            background: #f9fbff;
+        }
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+        .btn-small {
+            padding: 8px 10px;
+            font-size: 0.82rem;
+        }
+        .info-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .muted {
+            color: var(--muted);
+        }
+        .code-list {
+            margin-top: 12px;
+            max-height: 160px;
+            overflow: auto;
+            border: 1px solid #e4e8f4;
+            border-radius: 8px;
+            padding: 8px;
+            background: #fff;
+            font-size: 0.85rem;
+            font-family: Consolas, monospace;
+        }
+        @media (max-width: 980px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+            #graph {
+                height: 56vh;
+                min-height: 420px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="toolbar">
+            <h1>Story Tree: {{ story.title }}</h1>
+            <div class="actions">
+                <a href="{% url 'edit_story' story_id %}" class="btn">Back To Editor</a>
+                <a href="{% url 'story_list' %}" class="btn alt">Story List</a>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="value">{{ node_count }}</div>
+                <div class="label">Nodes</div>
+            </div>
+            <div class="stat">
+                <div class="value">{{ edge_count }}</div>
+                <div class="label">Choices (Edges)</div>
+            </div>
+            <div class="stat">
+                <div class="value">{{ unreachable_count }}</div>
+                <div class="label">Unreachable Nodes</div>
+            </div>
+            <div class="stat">
+                <div class="value">{{ broken_edge_count }}</div>
+                <div class="label">Broken Targets</div>
+            </div>
+        </div>
+
+        <div class="layout">
+            <div class="panel">
+                <div id="graph"></div>
+            </div>
+            <div class="panel sidebar">
+                <h2>Legend</h2>
+                <div class="legend">
+                    <div class="legend-item"><span class="swatch start"></span> Start node</div>
+                    <div class="legend-item"><span class="swatch ending"></span> Ending node</div>
+                    <div class="legend-item"><span class="swatch normal"></span> Regular node</div>
+                    <div class="legend-item"><span class="swatch unreachable"></span> Unreachable node</div>
+                    <div class="legend-item"><span class="swatch missing"></span> Missing target node</div>
+                </div>
+
+                <div class="control-box">
+                    <div class="control-row">
+                        <input type="checkbox" id="show-all-edge-labels">
+                        <label for="show-all-edge-labels">Show all choice labels</label>
+                    </div>
+                    <div class="control-row">
+                        <button type="button" class="btn btn-small" id="fit-graph-btn">Recenter Graph</button>
+                    </div>
+                    <div class="muted" style="font-size: 0.82rem;">Tip: keep labels off for large trees, click an edge to inspect text.</div>
+                </div>
+
+                <h2>Selection</h2>
+                <div class="info-box" id="selection-info">
+                    <div class="info-title">Nothing selected</div>
+                    <div class="muted">Click a node or edge to inspect it.</div>
+                </div>
+
+                {% if unreachable_node_ids %}
+                    <h2 style="margin-top: 14px;">Unreachable IDs</h2>
+                    <div class="code-list">
+                        {% for node_id in unreachable_node_ids %}
+                            <div>{{ node_id }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {{ graph_elements|json_script:"graph-elements" }}
+    {{ start_node_id|json_script:"graph-start-id" }}
+
+    <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+    <script>
+        (function () {
+            var elements = JSON.parse(document.getElementById('graph-elements').textContent || '[]');
+            var startId = JSON.parse(document.getElementById('graph-start-id').textContent || '""');
+            var container = document.getElementById('graph');
+            var info = document.getElementById('selection-info');
+            var showLabelsToggle = document.getElementById('show-all-edge-labels');
+            var fitGraphBtn = document.getElementById('fit-graph-btn');
+
+            if (!window.cytoscape) {
+                container.innerHTML = '<div style="padding:20px;color:#c92a2a;">Graph renderer failed to load.</div>';
+                return;
+            }
+
+            var cy = cytoscape({
+                container: container,
+                elements: elements,
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'shape': 'round-rectangle',
+                            'background-color': '#4f72d9',
+                            'label': 'data(label)',
+                            'text-wrap': 'wrap',
+                            'text-max-width': 170,
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'color': '#fff',
+                            'font-size': 11,
+                            'text-outline-width': 1,
+                            'text-outline-color': '#2b488d',
+                            'width': 108,
+                            'height': 64,
+                            'border-width': 1,
+                            'border-color': '#2b488d'
+                        }
+                    },
+                    {
+                        selector: 'node.start',
+                        style: {
+                            'background-color': '#2f9e44',
+                            'border-color': '#1f7430'
+                        }
+                    },
+                    {
+                        selector: 'node.ending',
+                        style: {
+                            'background-color': '#c92a2a',
+                            'border-color': '#9f1f1f'
+                        }
+                    },
+                    {
+                        selector: 'node.unreachable',
+                        style: {
+                            'background-color': '#868e96',
+                            'border-color': '#5f656b'
+                        }
+                    },
+                    {
+                        selector: 'node.missing',
+                        style: {
+                            'shape': 'diamond',
+                            'background-color': '#f08c00',
+                            'border-color': '#b56a00',
+                            'color': '#2f2f2f'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'curve-style': 'bezier',
+                            'target-arrow-shape': 'triangle',
+                            'target-arrow-color': '#8290c2',
+                            'line-color': '#9ba7d1',
+                            'width': 2.2,
+                            'line-opacity': 0.95,
+                            'label': 'data(label)',
+                            'font-size': 9,
+                            'color': '#4d5477',
+                            'text-background-color': '#ffffff',
+                            'text-background-opacity': 0.95,
+                            'text-background-padding': 2,
+                            'text-rotation': 'none',
+                            'text-opacity': 0
+                        }
+                    },
+                    {
+                        selector: 'edge:selected',
+                        style: {
+                            'width': 3.4,
+                            'text-opacity': 1
+                        }
+                    },
+                    {
+                        selector: 'edge.broken',
+                        style: {
+                            'line-style': 'dashed',
+                            'line-color': '#f08c00',
+                            'target-arrow-color': '#f08c00'
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'breadthfirst',
+                    directed: true,
+                    spacingFactor: 1.45,
+                    nodeDimensionsIncludeLabels: true,
+                    padding: 42,
+                    roots: startId ? '[id = "' + String(startId).replace(/"/g, '\\"') + '"]' : undefined
+                }
+            });
+
+            function setShowAllEdgeLabels(show) {
+                cy.style()
+                    .selector('edge')
+                    .style('text-opacity', show ? 1 : 0)
+                    .update();
+            }
+
+            if (showLabelsToggle) {
+                showLabelsToggle.addEventListener('change', function () {
+                    setShowAllEdgeLabels(showLabelsToggle.checked);
+                });
+            }
+
+            if (fitGraphBtn) {
+                fitGraphBtn.addEventListener('click', function () {
+                    cy.fit(cy.elements(), 44);
+                    cy.center();
+                });
+            }
+
+            function setInfoHtml(html) {
+                info.innerHTML = html;
+            }
+
+            cy.on('tap', 'node', function (event) {
+                var data = event.target.data();
+                setInfoHtml(
+                    '<div class="info-title">' + (data.full_title || data.id) + '</div>' +
+                    '<div><strong>ID:</strong> ' + data.id + '</div>' +
+                    '<div style="margin-top:6px;" class="muted">' + (data.text_preview || 'No preview text.') + '</div>'
+                );
+            });
+
+            cy.on('tap', 'edge', function (event) {
+                var data = event.target.data();
+                var broken = data.broken_target
+                    ? '<div style="margin-top:6px;color:#c92a2a;"><strong>Broken target:</strong> ' + data.broken_target + '</div>'
+                    : '';
+                setInfoHtml(
+                    '<div class="info-title">Choice Edge</div>' +
+                    '<div><strong>From:</strong> ' + data.source + '</div>' +
+                    '<div><strong>To:</strong> ' + data.target + '</div>' +
+                    '<div style="margin-top:6px;"><strong>Label:</strong> ' + (data.label || '(none)') + '</div>' +
+                    broken
+                );
+            });
+        })();
+    </script>
+</body>
+</html>
