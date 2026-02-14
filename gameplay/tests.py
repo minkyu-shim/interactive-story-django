@@ -196,3 +196,68 @@ class StoryGraphTests(TestCase):
         elements = response.context['graph_elements']
         self.assertTrue(any(item.get('classes') == 'missing' for item in elements))
         self.assertTrue(any(item.get('classes') == 'broken' for item in elements))
+
+
+class ChoiceRollTests(TestCase):
+    def setUp(self):
+        self.story_id = 777
+        self.node_id = 'start'
+        self.url = reverse('choose_choice', kwargs={'story_id': self.story_id, 'node_id': self.node_id})
+
+    @patch('gameplay.views.get_node')
+    def test_choose_choice_without_roll_redirects_to_target(self, mock_get_node):
+        mock_get_node.return_value = {
+            'id': self.node_id,
+            'choices': [
+                {'id': 1, 'target_node': 'next_node', 'requires_roll': False},
+            ],
+        }
+        response = self.client.post(self.url, {'choice_id': '1'})
+        expected = reverse('play_node', kwargs={'story_id': self.story_id, 'node_id': 'next_node'})
+        self.assertRedirects(response, expected, fetch_redirect_response=False)
+
+    @patch('gameplay.views.random.randint', return_value=6)
+    @patch('gameplay.views.get_node')
+    def test_choose_choice_roll_success_uses_primary_target(self, mock_get_node, _mock_randint):
+        mock_get_node.return_value = {
+            'id': self.node_id,
+            'choices': [
+                {'id': 2, 'target_node': 'treasure', 'requires_roll': True, 'roll_sides': 6, 'roll_required': 4},
+            ],
+        }
+        response = self.client.post(self.url, {'choice_id': '2'})
+        expected = reverse('play_node', kwargs={'story_id': self.story_id, 'node_id': 'treasure'})
+        self.assertRedirects(response, expected, fetch_redirect_response=False)
+
+    @patch('gameplay.views.random.randint', return_value=1)
+    @patch('gameplay.views.get_node')
+    def test_choose_choice_roll_fail_uses_fail_target(self, mock_get_node, _mock_randint):
+        mock_get_node.return_value = {
+            'id': self.node_id,
+            'choices': [
+                {
+                    'id': 3,
+                    'target_node': 'treasure',
+                    'requires_roll': True,
+                    'roll_sides': 6,
+                    'roll_required': 4,
+                    'on_fail_target': 'pitfall',
+                },
+            ],
+        }
+        response = self.client.post(self.url, {'choice_id': '3'})
+        expected = reverse('play_node', kwargs={'story_id': self.story_id, 'node_id': 'pitfall'})
+        self.assertRedirects(response, expected, fetch_redirect_response=False)
+
+    @patch('gameplay.views.random.randint', return_value=1)
+    @patch('gameplay.views.get_node')
+    def test_choose_choice_roll_fail_without_fail_target_stays_on_node(self, mock_get_node, _mock_randint):
+        mock_get_node.return_value = {
+            'id': self.node_id,
+            'choices': [
+                {'id': 4, 'target_node': 'treasure', 'requires_roll': True, 'roll_sides': 6, 'roll_required': 4},
+            ],
+        }
+        response = self.client.post(self.url, {'choice_id': '4'})
+        expected = reverse('play_node', kwargs={'story_id': self.story_id, 'node_id': self.node_id})
+        self.assertRedirects(response, expected, fetch_redirect_response=False)

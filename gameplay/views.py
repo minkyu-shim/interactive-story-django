@@ -1,4 +1,5 @@
 import logging
+import random
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -200,6 +201,55 @@ def play_node(request, story_id, node_id):
         'ratings_comments': ratings_comments,
         'user_rating_form': user_rating_form
     })
+
+
+def choose_choice(request, story_id, node_id):
+    if request.method != 'POST':
+        return redirect('play_node', story_id=story_id, node_id=node_id)
+
+    node_data = get_node(story_id, node_id)
+    if not node_data:
+        return redirect('story_list')
+
+    choice_id = request.POST.get('choice_id')
+    selected_choice = _find_choice_in_node(node_data, choice_id)
+    if not selected_choice:
+        messages.error(request, 'Selected choice is no longer available.')
+        return redirect('play_node', story_id=story_id, node_id=node_id)
+
+    primary_target = _choice_target(selected_choice)
+    if not primary_target:
+        messages.error(request, 'This choice has no valid destination.')
+        return redirect('play_node', story_id=story_id, node_id=node_id)
+
+    if selected_choice.get('requires_roll'):
+        roll_sides = _as_int(selected_choice.get('roll_sides'), 6)
+        roll_sides = min(max(roll_sides, 2), 100)
+        roll_required = _as_int(selected_choice.get('roll_required'), max(1, (roll_sides + 1) // 2))
+        roll_required = min(max(roll_required, 1), roll_sides)
+        rolled = random.randint(1, roll_sides)
+
+        if rolled >= roll_required:
+            messages.success(request, f"Dice roll {rolled}/{roll_sides} succeeded (needed {roll_required}+).")
+            next_node_id = primary_target
+        else:
+            fail_target = selected_choice.get('on_fail_target')
+            if fail_target:
+                messages.warning(
+                    request,
+                    f"Dice roll {rolled}/{roll_sides} failed (needed {roll_required}+). You were redirected.",
+                )
+                next_node_id = fail_target
+            else:
+                messages.warning(
+                    request,
+                    f"Dice roll {rolled}/{roll_sides} failed (needed {roll_required}+). Choice is inaccessible.",
+                )
+                next_node_id = node_id
+    else:
+        next_node_id = primary_target
+
+    return redirect('play_node', story_id=story_id, node_id=str(next_node_id))
 
 
 @login_required
@@ -446,6 +496,44 @@ def find_choice(story, choice_id):
     return None, None
 
 
+def _as_int(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _extract_choice_roll_data(post_data, story):
+    requires_roll = post_data.get('requires_roll') == 'on'
+    if not requires_roll:
+        return {
+            'requires_roll': False,
+            'roll_sides': None,
+            'roll_required': None,
+            'on_fail_target': None,
+        }
+
+    roll_sides = _as_int(post_data.get('roll_sides'), 6)
+    roll_sides = min(max(roll_sides, 2), 100)
+    roll_required = _as_int(post_data.get('roll_required'), max(1, (roll_sides + 1) // 2))
+    roll_required = min(max(roll_required, 1), roll_sides)
+
+    on_fail_target = post_data.get('on_fail_target') or None
+    if on_fail_target and not find_page(story, on_fail_target):
+        raise PermissionDenied
+
+    return {
+        'requires_roll': True,
+        'roll_sides': roll_sides,
+        'roll_required': roll_required,
+        'on_fail_target': on_fail_target,
+    }
+
+
+def _find_choice_in_node(node_data, choice_id):
+    return next((c for c in node_data.get('choices', []) if str(c.get('id')) == str(choice_id)), None)
+
+
 def _choice_target(choice):
     return (
         choice.get('next_page_id')
@@ -686,10 +774,12 @@ def add_choice_view(request, story_id, page_id):
         next_page = find_page(story, next_page_id)
         if not next_page:
             raise PermissionDenied
+        roll_data = _extract_choice_roll_data(request.POST, story)
 
         data = {
             'text': text,
-            'next_page_id': next_page_id
+            'next_page_id': next_page_id,
+            **roll_data,
         }
 
         create_choice(page_id, data)
@@ -780,10 +870,12 @@ def edit_choice_view(request, story_id, page_id, choice_id):
         next_page = find_page(story, next_page_id)
         if not next_page:
             raise PermissionDenied
+        roll_data = _extract_choice_roll_data(request.POST, story)
 
         data = {
             'text': text,
-            'next_page_id': next_page_id
+            'next_page_id': next_page_id,
+            **roll_data,
         }
 
         update_choice(choice_id, data)

@@ -9,8 +9,11 @@
         h1 { font-family: 'Playfair Display', serif; color: #5d5c7c; }
         form div { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; }
-        input[type="text"], select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         .btn { padding: 12px 25px; background: #619af3; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 1em; }
+        .check-row { display: flex; align-items: center; gap: 8px; }
+        .roll-config { padding: 14px; border: 1px dashed #d8d8d8; border-radius: 10px; background: #fafbff; }
+        .hint { color: #777; font-size: 0.88em; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -34,11 +37,53 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="check-row">
+                <input type="checkbox" id="requires-roll" name="requires_roll" {% if choice.requires_roll %}checked{% endif %}>
+                <label for="requires-roll" style="margin: 0;">Require Dice Roll For This Choice</label>
+            </div>
+            <div id="roll-config" class="roll-config" style="{% if not choice.requires_roll %}display:none;{% endif %}">
+                <div>
+                    <label>Dice Sides</label>
+                    <input type="number" name="roll_sides" min="2" max="100" value="{{ choice.roll_sides|default:6 }}">
+                    <p class="hint">Example: 6 means rolling 1d6.</p>
+                </div>
+                <div>
+                    <label>Required Minimum Roll</label>
+                    <input type="number" name="roll_required" min="1" max="100" value="{{ choice.roll_required|default:4 }}">
+                    <p class="hint">Success when roll is this value or higher.</p>
+                </div>
+                <div>
+                    <label>Fail Target (Optional)</label>
+                    <select name="on_fail_target">
+                        <option value="">Stay on current node when roll fails</option>
+                        {% for p in pages %}
+                            <option value="{{ p.id }}" {% if choice.on_fail_target == p.id %}selected{% endif %}>
+                                Node #{{ p.id }}: {{ p.text|truncatewords:8 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <p class="hint">If set, player is redirected there on failed roll.</p>
+                </div>
+            </div>
             <button type="submit" class="btn">{{ action|default:"Save" }} Choice</button>
         </form>
         <p style="text-align: center; margin-top: 20px;">
             <a href="{% url 'edit_story' story_id %}" style="color: #888; text-decoration: none;">Cancel</a>
         </p>
     </div>
+    <script>
+        (function () {
+            var toggle = document.getElementById('requires-roll');
+            var config = document.getElementById('roll-config');
+            if (!toggle || !config) {
+                return;
+            }
+            var sync = function () {
+                config.style.display = toggle.checked ? 'block' : 'none';
+            };
+            toggle.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
 </body>
 </html>

@@ -189,6 +189,11 @@
                                     <strong style="color: #619af3;">"{{ choice.text }}"</strong> 
                                     <span style="color: #888; margin: 0 10px;">&rarr;</span> 
                                     <span style="font-size: 0.9em; color: #555;">Leads to Node #{{ choice.next_page_id }}</span>
+                                    {% if choice.requires_roll %}
+                                        <span style="margin-left: 8px; font-size: 0.78em; color: #8a4f00; background: #fff4da; border: 1px solid #f4d28b; border-radius: 999px; padding: 2px 8px;">
+                                            Dice 1d{{ choice.roll_sides|default:6 }} >= {{ choice.roll_required|default:4 }}
+                                        </span>
+                                    {% endif %}
                                 </span>
                                 <div class="action-group">
                                     {% if page.id %}

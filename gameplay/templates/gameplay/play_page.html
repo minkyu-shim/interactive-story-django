@@ -110,12 +110,48 @@
             text-decoration: none;
             transition: all 0.2s ease;
             box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            cursor: pointer;
+            font-family: inherit;
         }
         .choice-btn:hover {
             background: #e6edf2;
             border-color: #d0d7dd;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .choice-form {
+            margin: 0;
+        }
+        .choice-roll {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: 0.82em;
+            color: #8a4f00;
+            background: #fff4da;
+            border: 1px solid #f4d28b;
+            border-radius: 999px;
+            padding: 2px 8px;
+        }
+        .flash-message {
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+        .flash-message.success {
+            background: #eaf8ef;
+            border: 1px solid #b8e0c4;
+            color: #246b38;
+        }
+        .flash-message.warning {
+            background: #fff6e6;
+            border: 1px solid #f0d39d;
+            color: #8a5a00;
+        }
+        .flash-message.error {
+            background: #fdecec;
+            border: 1px solid #efb3b3;
+            color: #9b1c1c;
         }
         .choice-effect {
             font-size: 0.9em;
@@ -146,6 +182,15 @@
         {% if user.is_authenticated %}
             <div style="text-align: right; margin-bottom: 10px;">
                 <a href="{% url 'report_story' story_id %}" class="btn" style="background: #e67e22; margin-top: 0;">Report Story</a>
+            </div>
+        {% endif %}
+        {% if messages %}
+            <div style="margin-bottom: 10px;">
+                {% for message in messages %}
+                    <div class="flash-message {{ message.tags|default:'success' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
             </div>
         {% endif %}
 
@@ -348,9 +393,22 @@
             <div class="choices">
                 <h3>What do you want to do?</h3>
                 {% for choice in node.choices %}
-                    <a href="{% url 'play_node' story_id=story_id node_id=choice.target_node %}" class="choice-btn">
-                        {{ choice.label }}
-                    </a>
+                    {% if choice.id %}
+                        <form method="post" action="{% url 'choose_choice' story_id=story_id node_id=node.id %}" class="choice-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="choice_id" value="{{ choice.id }}">
+                            <button type="submit" class="choice-btn">
+                                <div>{{ choice.label }}</div>
+                                {% if choice.requires_roll %}
+                                    <span class="choice-roll">Dice 1d{{ choice.roll_sides|default:6 }} >= {{ choice.roll_required|default:4 }}</span>
+                                {% endif %}
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'play_node' story_id=story_id node_id=choice.target_node %}" class="choice-btn">
+                            {{ choice.label }}
+                        </a>
+                    {% endif %}
                 {% endfor %}
             </div>
 
