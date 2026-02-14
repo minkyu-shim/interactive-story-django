@@ -20,7 +20,8 @@ from gameplay.views import (
     story_list, play_node, start_story, global_stats,
     create_story_view, edit_story_view, delete_story_view,
     add_page_view, add_choice_view, author_dashboard, signup,
-    submit_rating_comment, edit_page_view, delete_page_view,
+    submit_rating_comment, submit_story_report, report_moderation_list, report_moderation_update,
+    edit_page_view, delete_page_view,
     edit_choice_view, delete_choice_view
 )
 
@@ -34,6 +35,9 @@ urlpatterns = [
     # Logic to find the start node
     path('story/<int:story_id>/start/', start_story, name='start_story'),
     path('story/<int:story_id>/rate/', submit_rating_comment, name='submit_rating_comment'),
+    path('story/<int:story_id>/report/', submit_story_report, name='report_story'),
+    path('moderation/reports/', report_moderation_list, name='moderation_reports'),
+    path('moderation/reports/<int:report_id>/update/', report_moderation_update, name='moderation_report_update'),
 
     # Play node
     path('play/<int:story_id>/<str:node_id>/', play_node, name='play_node'),

@@ -49,3 +49,44 @@ class StoryRatingComment(models.Model):
 
     def __str__(self):
         return f"{self.user.username} rated Story {self.story_id}: {self.rating}/5"
+
+
+class StoryReport(models.Model):
+    class Reason(models.TextChoices):
+        SPAM = 'spam', 'Spam'
+        ABUSE = 'abuse', 'Abusive content'
+        SEXUAL = 'sexual_content', 'Sexual content'
+        VIOLENCE = 'violence', 'Violence'
+        HATE = 'hate', 'Hate speech'
+        MISINFORMATION = 'misinformation', 'Misinformation'
+        OTHER = 'other', 'Other'
+
+    class Status(models.TextChoices):
+        OPEN = 'open', 'Open'
+        IN_REVIEW = 'in_review', 'In review'
+        RESOLVED = 'resolved', 'Resolved'
+        REJECTED = 'rejected', 'Rejected'
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='story_reports')
+    story_id = models.IntegerField(db_index=True)
+    story_title_snapshot = models.CharField(max_length=200, blank=True)
+    reason = models.CharField(max_length=32, choices=Reason.choices)
+    details = models.TextField(blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.OPEN, db_index=True)
+    admin_note = models.TextField(blank=True)
+    resolved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='resolved_story_reports',
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'story_id')
+
+    def __str__(self):
+        return f"Report by {self.user.username} on story {self.story_id} ({self.reason})"

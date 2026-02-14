@@ -143,6 +143,11 @@
         <div style="height: 40px;"></div>
     {% endif %}
     <div class="story-container">
+        {% if user.is_authenticated %}
+            <div style="text-align: right; margin-bottom: 10px;">
+                <a href="{% url 'report_story' story_id %}" class="btn" style="background: #e67e22; margin-top: 0;">Report Story</a>
+            </div>
+        {% endif %}
 
         <h2>{{ node.title }}</h2>
 

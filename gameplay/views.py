@@ -1,18 +1,21 @@
 import logging
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from .models import Play, PlaySession, StoryOwnership, StoryRatingComment
-from .forms import StoryRatingCommentForm
+from django.utils import timezone
+from .models import Play, PlaySession, StoryOwnership, StoryRatingComment, StoryReport
+from .forms import StoryRatingCommentForm, StoryReportForm, StoryReportModerationForm
 from .services import (
     get_stories, get_story_start, get_node, get_story_details,
     create_story, update_story, delete_story, create_page, create_choice,
     update_page, delete_page, update_choice, delete_choice, get_story_nodes
 )
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Q
 
 logger = logging.getLogger(__name__)
 VALID_STORY_STATUSES = {'draft', 'published', 'suspended'}
@@ -215,6 +218,119 @@ def submit_rating_comment(request, story_id):
             rating_comment.save()
 
     return redirect(request.META.get('HTTP_REFERER', 'story_list'))
+
+
+@login_required
+def submit_story_report(request, story_id):
+    story = get_story_details(story_id) or {}
+    story_title = story.get('title', '') if isinstance(story, dict) else ''
+    existing_report = StoryReport.objects.filter(user=request.user, story_id=story_id).first()
+
+    if request.method == 'POST':
+        form = StoryReportForm(request.POST, instance=existing_report)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.user = request.user
+            report.story_id = story_id
+            if story_title:
+                report.story_title_snapshot = story_title
+            report.status = StoryReport.Status.OPEN
+            report.resolved_by = None
+            report.resolved_at = None
+            report.save()
+            messages.success(request, 'Report submitted. Our admin team will review it.')
+            return redirect('story_list')
+    else:
+        form = StoryReportForm(instance=existing_report)
+
+    return render(request, 'gameplay/story_report_form.html', {
+        'form': form,
+        'story_id': story_id,
+        'story_title': story_title or f"Story #{story_id}",
+        'existing_report': existing_report,
+    })
+
+
+@login_required
+def report_moderation_list(request):
+    if not request.user.is_staff:
+        raise PermissionDenied
+
+    status_filter = request.GET.get('status', '')
+    reason_filter = request.GET.get('reason', '')
+    query = request.GET.get('q', '').strip()
+
+    reports = StoryReport.objects.select_related('user', 'resolved_by').order_by('-created_at')
+
+    if status_filter:
+        reports = reports.filter(status=status_filter)
+    if reason_filter:
+        reports = reports.filter(reason=reason_filter)
+    if query:
+        query_filter = (
+            Q(story_title_snapshot__icontains=query) |
+            Q(details__icontains=query) |
+            Q(admin_note__icontains=query) |
+            Q(user__username__icontains=query)
+        )
+        if query.isdigit():
+            query_filter |= Q(story_id=int(query))
+        reports = reports.filter(query_filter)
+
+    report_rows = [
+        {
+            'report': report,
+            'form': StoryReportModerationForm(instance=report, prefix=f"r{report.id}"),
+        }
+        for report in reports
+    ]
+
+    return render(request, 'gameplay/report_moderation_list.html', {
+        'report_rows': report_rows,
+        'status_filter': status_filter,
+        'reason_filter': reason_filter,
+        'query': query,
+        'status_choices': StoryReport.Status.choices,
+        'reason_choices': StoryReport.Reason.choices,
+    })
+
+
+@login_required
+def report_moderation_update(request, report_id):
+    if not request.user.is_staff:
+        raise PermissionDenied
+
+    if request.method != 'POST':
+        return redirect('moderation_reports')
+
+    report = get_object_or_404(StoryReport, id=report_id)
+    form = StoryReportModerationForm(request.POST, instance=report, prefix=f"r{report.id}")
+    redirect_status = None
+
+    if form.is_valid():
+        updated_report = form.save(commit=False)
+        if updated_report.status in {StoryReport.Status.RESOLVED, StoryReport.Status.REJECTED}:
+            updated_report.resolved_by = request.user
+            updated_report.resolved_at = timezone.now()
+        else:
+            updated_report.resolved_by = None
+            updated_report.resolved_at = None
+        updated_report.save()
+        redirect_status = updated_report.status
+        messages.success(request, f"Report #{report.id} updated.")
+    else:
+        messages.error(request, f"Invalid update for report #{report.id}.")
+
+    next_url = request.POST.get('next', '')
+    if next_url.startswith('/'):
+        # Keep the updated row visible after save when a status filter was active.
+        parsed = urlsplit(next_url)
+        params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        if redirect_status and params.get('status') and params.get('status') != redirect_status:
+            params['status'] = redirect_status
+            next_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(params), parsed.fragment))
+        return redirect(next_url)
+    return redirect('moderation_reports')
 
 
 def global_stats(request):
